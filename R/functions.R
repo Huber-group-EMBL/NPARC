@@ -1,5 +1,11 @@
 #' Main function
 #' @import dplyr
+#' @examples
+#' data(staurosporineTPP)
+#' nparc(x = staurosporineTPP$temperature,
+#'       y = staurosporineTPP$relAbundance,
+#'       group = staurosporineTPP$compoundConcentration)
+#'
 nparc <- function(x, y, group, id=NULL, params){
   rssDiff <- computeRSSdiff(x = x, y = y, treatment = group)
 }

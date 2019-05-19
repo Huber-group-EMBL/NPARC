@@ -9,3 +9,10 @@ nparc(x, y, group, id = NULL, params)
 \description{
 Main function
 }
+\examples{
+data(staurosporineTPP)
+nparc(x = staurosporineTPP$temperature,
+      y = staurosporineTPP$relAbundance,
+      group = staurosporineTPP$compoundConcentration)
+
+}
