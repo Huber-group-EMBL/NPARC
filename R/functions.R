@@ -1,5 +1,6 @@
 #' Main function
-#' @import dplyr
+#' @import dplyr tidyr
+#' @export
 #' @examples
 #' data(staurosporineTPP)
 #' nparc(x = staurosporineTPP$temperature,
@@ -7,7 +8,28 @@
 #'       group = staurosporineTPP$compoundConcentration)
 #'
 nparc <- function(x, y, group, id=NULL, params){
-  rssDiff <- computeRSSdiff(x = x, y = y, treatment = group)
+
+  rssDiff <- invokeRSSdiff(x = x, y = y, group = group, id = id)
+
+  return(rssDiff)
+}
+
+invokeRSSdiff <- function(x, y, group, id=NULL){
+
+  if (!is.null(id)) {
+
+    tibble(x, y, group,id) %>%
+      group_by(id) %>%
+      do(computeRSSdiff(x = .$x, y = .$y, treatment = .$group)) %>%
+      ungroup
+
+  } else {
+
+    rssDiff <- computeRSSdiff(x = x, y = y, treatment = group)
+
+  }
+
+  return(rssDiff)
 }
 
 fitSingleSigmoid <- function(x, y, start=c(Pl = 0, a = 550, b = 10)){
