@@ -7,30 +7,98 @@
 #'       y = staurosporineTPP$relAbundance,
 #'       group = staurosporineTPP$compoundConcentration)
 #'
-nparc <- function(x, y, group, id=NULL, params){
+nparc <- function(x, y, group, id=NULL, df_type = c("theoretical", "estimate"), params,
+                  BPPARAM = BiocParallel::SerialParam()){
 
-  rssDiff <- invokeRSSdiff(x = x, y = y, group = group, id = id)
+  rssDiff <- invokeRSSdiff(x = x,
+                           y = y,
+                           group = group,
+                           id = id,
+                           BPPARAM = BPPARAM)
 
-  return(rssDiff)
+  pAdj <-  nparFtest(rss0 = rssDiff$rss0,
+                        rss1 = rssDiff$rss1,
+                        df_type = df_type,
+                        n0 = rssDiff$n0,
+                        n1 = rssDiff$n1,
+                        pars0 = rssDiff$pars0,
+                        pars1 = rssDiff$pars1) # tb filled
+  # return p-values, and later data.frame() with all stats
+
+  return(pAdj)
 }
 
-invokeRSSdiff <- function(x, y, group, id=NULL){
+nparFtest <- function(rss0, rss1,
+                      df_type = c("estimate", "theoretical"),
+                      n0 = NULL, n1 = NULL, pars0 = NULL, pars1 = NULL){
+
+  pars0 = 3
+  pars1 = ifelse(n1 > 40, yes = 9, no = 6)
+  rssDiff <- rss0 - rss1
+
+  if (df_type == "theoretical"){
+
+    d1 = pars1 - pars0
+    d2 = n1 - pars1
+  }
+
+  f = (rssDiff/d1) / (rss1/d2)
+  pVal = 1 - pf(f, df1 = d1, df2 = d2)
+  pAdj = p.adjust(pVal, "BH")
+
+  return(pAdj)
+}
+
+
+fct <- function(subs){
+  rssDiff <- computeRSSdiff(x = subs$x, y = subs$y, treatment = subs$group)
+}
+
+
+#'
+invokeRSSdiff <- function(x, y, group, id=NULL, BPPARAM = BiocParallel::SerialParam()){
+
+  tab <- tibble(x, y, group, id)
 
   if (!is.null(id)) {
 
-    tibble(x, y, group,id) %>%
-      group_by(id) %>%
-      do(computeRSSdiff(x = .$x, y = .$y, treatment = .$group)) %>%
-      ungroup
-
+    allRSS <- BiocParallel::bplapply(X = unique(tab$id),
+                                     function(i){
+                                       proteinSubset <- tab[which(tab$id == i), ]
+                                       rssDiff <- computeRSSdiff(x = proteinSubset$x,
+                                                                 y = proteinSubset$y,
+                                                                 treatment = proteinSubset$group) %>%
+                                         mutate(id = i)
+                                     }, BPPARAM = BPPARAM)
+    allRSS <-  bind_rows(allRSS)
   } else {
 
-    rssDiff <- computeRSSdiff(x = x, y = y, treatment = group)
+    allRSS <- computeRSSdiff(x = x, y = y, treatment = group)
 
   }
 
-  return(rssDiff)
+  message("\nFor ", sum(allRSS$repeats == 0) , " proteins, the models successfully converged and produced nonnegative RSS-differences in the first iteration.",
+          "\nFor ", sum(allRSS$repeats > 0 & allRSS$repeats < 10), " proteins, nonnegative RSS-differences could be obtained after repeating the fit with different start parameters.")
+
+  return(allRSS)
 }
+
+
+# invokeRSSdiff_ddply <- function(x, y, group, id=NULL){
+#
+#   if (!is.null(id)) {
+#
+#     rssDiff <- tibble(x, y, group,id) %>%
+#       plyr::ddply("id", fct, .progress = "text")
+#
+#   } else {
+#
+#     rssDiff <- computeRSSdiff(x = x, y = y, treatment = group)
+#
+#   }
+#
+#   return(rssDiff)
+# }
 
 fitSingleSigmoid <- function(x, y, start=c(Pl = 0, a = 550, b = 10)){
   try(nls(formula = y ~ (1 - Pl)  / (1+exp((b - a/x))) + Pl,
