@@ -1,5 +1,7 @@
 fitSigmoidsParallel <- function(x, y, group, BPPARAM, seed, maxAttempts, alwaysPermute){
 
+  dat <- tibble(x, y, iter = group)
+
   # ---- Fit sigmoid models ----
   models <- BiocParallel::bplapply(X = unique(dat$iter),
                                    function(i){
