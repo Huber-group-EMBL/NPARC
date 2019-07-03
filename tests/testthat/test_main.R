@@ -1,5 +1,18 @@
 source("tests/init_tests.R")
 
+test_that("invokeNPARC_allok", {
+  results <- nparc(x = ATP_targets_stauro$temperature,
+                   y = ATP_targets_stauro$relAbundance,
+                   id = ATP_targets_stauro$uniqueID,
+                   groupsNull = NULL,
+                   groupsAlt = ATP_targets_stauro$compoundConcentration,
+                   BPPARAM = BPPARAM,
+                   seed = 123,
+                   maxAttempts = 100,
+                   alwaysPermute = FALSE)
+
+})
+
 test_that("invokeRSSdiff_allok", {
 
   rssDiffs <- invokeRSSdiff(x = ATP_targets_stauro$temperature,

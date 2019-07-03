@@ -7,25 +7,50 @@
 #'       y = staurosporineTPP$relAbundance,
 #'       group = staurosporineTPP$compoundConcentration)
 #'
-nparc <- function(x, y, group, id=NULL, df_type = c("theoretical", "estimate"), params,
-                  BPPARAM = BiocParallel::SerialParam()){
+nparc <- function(x, y, id,
+                  groupsNull,
+                  groupsAlt,
+                  BPPARAM = BiocParallel::SerialParam(progressbar = TRUE),
+                  seed,
+                  return_models,
+                  maxAttempts,
+                  alwaysPermute,
+                  df_type = c("theoretical", "estimate")){
 
-  rssDiff <- invokeRSSdiff(x = x,
-                           y = y,
-                           group = group,
-                           id = id,
-                           BPPARAM = BPPARAM)
+  fitStatsNull <- invokeParallelFits(x = x,
+                                     y = y,
+                                     id = id,
+                                     groups = groupsNull,
+                                     BPPARAM = BPPARAM,
+                                     seed = seed,
+                                     maxAttempts = maxAttempts,
+                                     alwaysPermute = alwaysPermute,
+                                     return_models = return_models)
 
-  pAdj <-  nparFtest(rss0 = rssDiff$rss0,
-                        rss1 = rssDiff$rss1,
-                        df_type = df_type,
-                        n0 = rssDiff$n0,
-                        n1 = rssDiff$n1,
-                        pars0 = rssDiff$pars0,
-                        pars1 = rssDiff$pars1) # tb filled
-  # return p-values, and later data.frame() with all stats
+  fitStatsAlt <-  invokeParallelFits(x = x,
+                                     y = y,
+                                     id = id,
+                                     groups = groupsAlt,
+                                     BPPARAM = BPPARAM,
+                                     seed = seed,
+                                     maxAttempts = maxAttempts,
+                                     alwaysPermute = alwaysPermute,
+                                     return_models = return_models)
 
-  return(pAdj)
+
+  # to do: add next steps:
+  # plt <-
+
+  # pAdj <-  nparFtest(rss0 = rssDiff$rss0,
+  #                       rss1 = rssDiff$rss1,
+  #                       df_type = df_type,
+  #                       n0 = rssDiff$n0,
+  #                       n1 = rssDiff$n1,
+  #                       pars0 = rssDiff$pars0,
+  #                       pars1 = rssDiff$pars1) # tb filled
+  # # return p-values, and later data.frame() with all stats
+
+  return(fitStatsNull$rss)
 }
 
 nparFtest <- function(rss0, rss1,

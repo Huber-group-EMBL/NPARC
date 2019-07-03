@@ -3,3 +3,5 @@
 export(nparc)
 import(dplyr)
 import(tidyr)
+importFrom(broom,augment)
+importFrom(sme,AICc)

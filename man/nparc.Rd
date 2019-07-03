@@ -4,7 +4,10 @@
 \alias{nparc}
 \title{Main function}
 \usage{
-nparc(x, y, group, id = NULL, params)
+nparc(x, y, id, groupsNull, groupsAlt,
+  BPPARAM = BiocParallel::SerialParam(progressbar = TRUE), seed,
+  return_models, maxAttempts, alwaysPermute, df_type = c("theoretical",
+  "estimate"))
 }
 \description{
 Main function
