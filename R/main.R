@@ -50,5 +50,5 @@ nparc <- function(x, y, id,
   #                       pars1 = rssDiff$pars1) # tb filled
   # # return p-values, and later data.frame() with all stats
 
-  return(fitStatsNull$rss)
+  return(fitStatsNull)
 }

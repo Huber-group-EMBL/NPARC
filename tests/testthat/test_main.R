@@ -9,7 +9,8 @@ test_that("invokeNPARC_allok", {
                    BPPARAM = BPPARAM,
                    seed = 123,
                    maxAttempts = 100,
-                   alwaysPermute = FALSE)
+                   alwaysPermute = FALSE,
+                   return_models = TRUE)
 
 })
 
