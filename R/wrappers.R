@@ -12,23 +12,19 @@ invokeParallelFits <- function(x, y,
   } else if (is.vector(groups)){
     groups <- data.frame(group = groups, stringsAsFactors = FALSE)
   }
-
-  # Determing factor names for individual model fitting
   group_names <- colnames(groups)
 
-  # Prepare long data for fitting (df and matrix format)
-  dat_long <- data.frame(id, x, y, groups, stringsAsFactors = FALSE)
-
-  # Assign unique iterator for parallelization
-  dat_long <- dat_long %>% unite_("iter", c("id", group_names), remove = FALSE)
+  groups <- groups %>%
+    mutate(id = id) %>%
+    unite("iter", !!c("id", group_names), remove = FALSE)
 
   # ---- Fit models ----
   t1 <- Sys.time()
   message("Starting model fitting...")
 
-  models <- performParallelFits(x = dat_long$x,
-                                y = dat_long$y,
-                                iter = dat_long$iter,
+  models <- performParallelFits(x = x,
+                                y = y,
+                                iter = groups$iter,
                                 BPPARAM = BPPARAM,
                                 seed = seed,
                                 maxAttempts = maxAttempts,
@@ -42,13 +38,13 @@ invokeParallelFits <- function(x, y,
   # ---- Flag successful model fits ----
   message("Flagging successful model fits...")
 
-  fits <- dat_long %>%
+  fits <- groups %>%
     group_by_(.dots = c("iter", "id", group_names)) %>%
     distinct_(.dots = groups(.)) %>%
-    do(fitted_model = models[[.$iter]]) %>%
+    do(fittedModel = models[[.$iter]]) %>%
     ungroup %>%
     ## Mark proteins where model fit was not successful
-    mutate(successfulFit = (sapply(fitted_model, class) != "try-error"))
+    mutate(successfulFit = (sapply(fittedModel, class) != "try-error"))
 
   message("... complete.\n")
 
@@ -57,9 +53,13 @@ invokeParallelFits <- function(x, y,
 
   fitResults <- evalModels(fits = fits,
                            x = x,
-                           groups = group_names,
-                           return_models = return_models)
+                           groups = group_names)
 
+  if (return_models) {
+    fitResults$fittedModels <- fits
+  } else {
+    fitResults$fittedModels <- NULL
+  }
 
   return(fitResults)
 }

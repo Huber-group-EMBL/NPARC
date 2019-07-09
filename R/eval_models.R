@@ -1,78 +1,56 @@
-evalModels <- function(fits, groups, x, return_models){
+#' Invoke model evaluation
+#'
+evalModels <- function(fits, groups, x){
 
-  modelStats       <- assessModels(fits = fits, x = x, groups = groups, return_models = return_models)
+  modelMetrics <- assessModelMetrics(fits = fits, x = x, groups = groups)
   modelPredictions <- augmentModels(fits = fits, groups = groups)
 
-  return(list(stats = modelStats, predictions = modelPredictions))
+  return(list(modelMetrics = modelMetrics, modelPredictions = modelPredictions))
 }
 
+#' Augment model to obtain data frame with measurements, predictions and residuals.
+#'
+#'@importFrom broom augment
 augmentModels <- function(fits, groups){
+
   # ---- Computing model predictions and residuals ----
   message("Computing model predictions and residuals ...")
 
-  model_table <- fits %>%
+  modelPredictions <- fits %>%
     filter(successfulFit) %>%
     group_by_(.dots = c("iter", "id", groups)) %>%
-    do(augmentSingleModel(nls_obj = .$fitted_model[[1]])) %>%
+    do(augment(.$fittedModel[[1]])) %>%
     ungroup %>%
-    arrange(id)
+    right_join(fits %>% select(!!c("iter", "id", groups))) # fill for unsuccessful fits
+
   message("... complete.\n")
 
-  return(model_table)
+  return(modelPredictions)
 
 }
 
-assessModels <- function(fits, x, groups, return_models){
-  # ---- Evaluate models ----
+#' Invoke calculation of performance metrics per model
+#'
+assessModelMetrics <- function(fits, x, groups){
   message("Evaluating models ...")
 
-  fit_stats <- fits %>%
+  metrics <- fits %>%
     filter(successfulFit) %>%
     group_by_(.dots = c("iter", "id", groups)) %>%
-    do(assessSingleModel(nls_obj = .$fitted_model[[1]],
+    do(assessSingleModel(nls_obj = .$fittedModel[[1]],
                          xVec = unique(x))) %>%
     ungroup %>%
-    arrange(id)
+    right_join(fits %>% select(!!c("iter", "id", groups))) # fill for unsuccessful fits
+
   message("... complete.\n")
 
-  # ---- Create return value ----
-  # Return model summaries and (optional) model objects:
-  out <- fits %>%
-    left_join(fit_stats) %>%
-    arrange(id) %>%
-    ungroup %>%
-    dplyr::select(-iter)
-
-  if (!return_models) {
-    out [["fitted_model"]] <- NULL
-  }
-
-  return(out)
+  return(metrics)
 }
 
-augmentSingleModel <- function(nls_obj){
-  #' Compute predictions and residuals for a single model
-  #'
-  #' @importFrom broom augment
-
-  modelPredMeasurements <- broom::augment(nls_obj) %>%
-    mutate(type = "measurement_available")
-
-  xGrid <- seq(min(modelPredMeasurements$x), max(modelPredMeasurements$x), length.out = 100)
-
-  modelPredGrid <- data.frame(x = xGrid, y = predict(nls_obj, newdata = list(x = xGrid)))  %>%
-    mutate(type = "measurement_not_available")
-
-  out <- full_join(modelPredMeasurements, modelPredGrid, by = c("x", "y", "type")) %>%
-    arrange(x)
-
-  return(out)
-}
-
+#' Retrieve fitted parameters from model
+#'
+#' @importFrom sme AICc
 assessSingleModel <- function(nls_obj, xVec){
-  #' Retrieve fitted parameters from model
-  #'
-  #' @importFrom sme AICc
 
   if (any(is.na(xVec))){
     stop("Temperature vector contains missing values. Cannot integrate over these values to compute the curve area.")
@@ -82,7 +60,7 @@ assessSingleModel <- function(nls_obj, xVec){
   deriv1 <- D(parse(text = meltCurve), "x")
   deriv2 <- D(deriv1, "x")
 
-  tm = a = b = pl = aumc = tm_sd = rss = logL = nCoeffs = nObs = resid_sd = aicc <- NA
+  tm = a = b = pl = aumc = tm_sd = rss = logL = nCoeffs = nFitted = resid_sd = aicc <- NA
   conv <- FALSE
   if (class(nls_obj) != "try-error"){
     pars <- coefficients(nls_obj)
@@ -110,10 +88,10 @@ assessSingleModel <- function(nls_obj, xVec){
       aumc <- int$value
     }
 
-    nObs <- nobs(nls_obj)
+    nFitted <- nobs(nls_obj)
     rss <- sum(resid(nls_obj)^2, na.rm = TRUE)
-    resid_sd  <- sqrt(rss/nObs)
-    logL <- -nObs/2 * log(2*pi*resid_sd^2) - rss/(2*resid_sd^2) #loglik <- logLik(m)
+    resid_sd  <- sqrt(rss/nFitted)
+    logL <- -nFitted/2 * log(2*pi*resid_sd^2) - rss/(2*resid_sd^2) #loglik <- logLik(m)
     aicc <- AICc(nls_obj)
     nonNAs <- sum(!is.na(resid(nls_obj)))
 
@@ -121,5 +99,25 @@ assessSingleModel <- function(nls_obj, xVec){
   }
   return(data.frame(tm = tm, a = a,  b = b,  pl = pl, aumc = aumc,
                     resid_sd = resid_sd, rss = rss, loglik = logL,  AICc = aicc,
-                    tm_sd = tm_sd, nCoeffs = nCoeffs, nObs = nObs, conv = conv))
+                    tm_sd = tm_sd, nCoeffs = nCoeffs, nFitted = nFitted, conv = conv))
 }
+
+
+# augmentSingleModel <- function(nls_obj){
+#   #' Compute predictions and residuals for a single model
+#   #'
+#   #' @importFrom broom augment
+#
+#   modelPredictions <- broom::augment(nls_obj) #%>%
+#     # mutate(type = "measurement_available")
+#
+#   # xGrid <- seq(min(modelPredMeasurements$x), max(modelPredMeasurements$x), length.out = 100)
+#   #
+#   # modelPredGrid <- data.frame(x = xGrid, y = predict(nls_obj, newdata = list(x = xGrid)))  %>%
+#   #   mutate(type = "measurement_not_available")
+#   #
+#   # out <- full_join(modelPredMeasurements, modelPredGrid, by = c("x", "y", "type")) %>%
+#   #   arrange(x)
+#'
+#   return(modelPredictions)
+# }

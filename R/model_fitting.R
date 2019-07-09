@@ -5,6 +5,7 @@ performParallelFits <- function(x,
                                 seed,
                                 maxAttempts,
                                 alwaysPermute){
+  # rename to fitModels
 
   # ---- Fit sigmoid models ----
   models <- BiocParallel::bplapply(unique(iter),
