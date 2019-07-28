@@ -13,4 +13,5 @@ Suggests:
     testthat
 Imports: 
     dplyr,
-    tidyr
+    tidyr,
+    sme
