@@ -17,31 +17,81 @@ aggregateRSS <- function(id, rss, nCoeffs, nFitted){
 
   out <- tibble(id, rss, nCoeffs, nFitted) %>%
     group_by(id) %>%
-    summarise(rss = sum(rss, na.rm = TRUE),
-              nCoeffs = sum(nCoeffs, na.rm = TRUE),
-              nFitted = sum(nFitted, na.rm = TRUE)) %>%
+    summarise(rss = sum(rss, na.rm = FALSE),
+              nCoeffs = sum(nCoeffs, na.rm = FALSE),
+              nFitted = sum(nFitted, na.rm = FALSE)) %>%
     ungroup
 
   return(out)
 }
 
 
-nparcFtest <- function(id, rss0, rss1,
-                      df_type = c("estimate", "theoretical"),
-                      n0 = NULL, n1 = NULL, pars0 = NULL, pars1 = NULL){
+#' Perform F-test
+#'
+#' @export
+nparcFtest <- function(modelMetrics, df_type = c("empirical", "theoretical")){
+
+  metricsNull <- filter(modelMetrics, modelType == "null")
+  metricsAlt <- filter(modelMetrics, modelType == "alternative")
+
+  metrics <- combineRSS(idNull = metricsNull$id,
+                        rssNull = metricsNull$rss,
+                        nCoeffsNull = metricsNull$nCoeffs,
+                        nFittedNull = metricsNull$nFitted,
+                        idAlt = metricsAlt$id,
+                        rssAlt = metricsAlt$rss,
+                        nCoeffsAlt = metricsAlt$nCoeffs,
+                        nFittedAlt = metricsAlt$nFitted)
+
+  id <- metrics$id
+  rss0 <- metrics$rssNull
+  rss1 <- metrics$rssAlt
+  pars0 <- metrics$nCoeffsNull
+  pars1 <- metrics$nCoeffsAlt
+  n0 <- metrics$nFittedNull
+  n1 <- metrics$nFittedAlt
+  rssDiff <- metrics$rssDiff
 
   if (df_type == "theoretical"){
+
     d1 = pars1 - pars0
     d2 = n1 - pars1
+
+  } else if (df_type == "empirical"){
+
+    distr_pars <- estimate_df(rss1 = rss1, rssDiff = rssDiff)
+    d1 <- distr_pars$d1
+    d2 <- distr_pars$d2
+    s0_sq <- distr_pars$s0_sq
+    rssDiff = rssDiff/s0_sq
+    rss1 = rss1/s0_sq
+
   }
 
-  rssDiff <- rss0 - rss1
-
-  f = ((rssDiff)/d1) / (rss1/d2)
+  f = (rssDiff/d1) / (rss1/d2)
   pVal = 1 - pf(f, df1 = d1, df2 = d2)
   pAdj = p.adjust(pVal, "BH")
 
-  out <- tibble(id, rssDiff, F = f, pVal, pAdj)
+  out <- tibble(id, rssDiff, F = f, pVal, pAdj, df1 = d1, df2 = d2, rssNull = rss0, rssAlt = rss1,
+                nFittedNull = n0, nFittedAlt = n1, nCoeffsNull = pars0, nCoeffsAlt = pars1)
 
+  return(out)
+}
+
+estimate_df <- function(rss1, rssDiff){!is.na(rssDiff)
+
+  rm_idx <- is.na(rssDiff) | (rssDiff < 0)
+  rss1 <- rss1[!rm_idx]
+  rssDiff <- rssDiff[!rm_idx]
+
+  M = median(rssDiff, na.rm = T)
+  V = mad(rssDiff, na.rm = T)^2
+  s0_sq = 1/2 * V/M
+  rssDiff = rssDiff/s0_sq
+  rss1 = rss1/s0_sq
+  d1 = MASS::fitdistr(x = rssDiff, densfun = "chi-squared", start = list(df = 1))[["estimate"]]
+  d2 = MASS::fitdistr(x = rss1, densfun = "chi-squared", start = list(df = 1))[["estimate"]]
+
+  out <- list(d1 = d1, d2 = d2, s0_sq = s0_sq)
   return(out)
 }
