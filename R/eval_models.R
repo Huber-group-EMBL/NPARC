@@ -21,7 +21,8 @@ augmentModels <- function(fits, groups){
     group_by_(.dots = c("iter", "id", groups)) %>%
     do(augment(.$fittedModel[[1]])) %>%
     ungroup %>%
-    right_join(fits %>% select(!!c("iter", "id", groups))) # fill for unsuccessful fits
+    right_join(fits %>% select(!!c("iter", "id", groups))) %>% # fill for unsuccessful fits
+    select(-iter)
 
   message("... complete.\n")
 
@@ -35,12 +36,13 @@ assessModelMetrics <- function(fits, x, groups){
   message("Evaluating models ...")
 
   metrics <- fits %>%
-    filter(successfulFit) %>%
+    #filter(successfulFit) %>%
     group_by_(.dots = c("iter", "id", groups)) %>%
     do(assessSingleModel(nls_obj = .$fittedModel[[1]],
                          xVec = unique(x))) %>%
     ungroup %>%
-    right_join(fits %>% select(!!c("iter", "id", groups))) # fill for unsuccessful fits
+    # right_join(fits %>% select(!!c("iter", "id", groups))) %>% # fill for unsuccessful fits
+    select(-iter)
 
   message("... complete.\n")
 
@@ -49,20 +51,16 @@ assessModelMetrics <- function(fits, x, groups){
 
 #' Retrieve fitted parameters from model
 #'
-#' @importFrom sme AICc
 assessSingleModel <- function(nls_obj, xVec){
 
   if (any(is.na(xVec))){
     stop("Temperature vector contains missing values. Cannot integrate over these values to compute the curve area.")
   }
 
-  meltCurve <- Reduce(paste, deparse(formula(nls_obj))) %>% gsub("y ~ ", "", .)
-  deriv1 <- D(parse(text = meltCurve), "x")
-  deriv2 <- D(deriv1, "x")
-
-  tm = a = b = pl = aumc = tm_sd = rss = logL = nCoeffs = nFitted = resid_sd = aicc <- NA
+  tm = a = b = pl = aumc = tm_sd = rss = logL = nCoeffs = nFitted = resid_sd <- NA
   conv <- FALSE
   if (class(nls_obj) != "try-error"){
+    #meltCurve <- Reduce(paste, deparse(formula(nls_obj))) %>% gsub("y ~ ", "", .)
     pars <- coefficients(nls_obj)
     nCoeffs <- length(pars)
     a <- pars[["a"]]
@@ -71,7 +69,6 @@ assessSingleModel <- function(nls_obj, xVec){
     yVec <- fitted(nls_obj) + resid(nls_obj)
     tm_fct <- parse(text = "a / (b - log((1-pl)/(1/2 - pl) - 1))")
     suppressWarnings(tm <- eval(tm_fct))
-    # suppressWarnings(slope <- TPP:::meltingCurveSlope(model = nls_obj, xInfl = tm))
     dtm_da <-D(tm_fct, "a")
     dtm_db <-D(tm_fct, "b")
     dtm_dpl <-D(tm_fct, "pl")
@@ -92,13 +89,12 @@ assessSingleModel <- function(nls_obj, xVec){
     rss <- sum(resid(nls_obj)^2, na.rm = TRUE)
     resid_sd  <- sqrt(rss/nFitted)
     logL <- -nFitted/2 * log(2*pi*resid_sd^2) - rss/(2*resid_sd^2) #loglik <- logLik(m)
-    aicc <- AICc(nls_obj)
     nonNAs <- sum(!is.na(resid(nls_obj)))
 
     conv <- nls_obj$convInfo$isConv
   }
   return(data.frame(tm = tm, a = a,  b = b,  pl = pl, aumc = aumc,
-                    resid_sd = resid_sd, rss = rss, loglik = logL,  AICc = aicc,
+                    resid_sd = resid_sd, rss = rss, loglik = logL,
                     tm_sd = tm_sd, nCoeffs = nCoeffs, nFitted = nFitted, conv = conv))
 }
 

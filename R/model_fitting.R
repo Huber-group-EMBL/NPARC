@@ -4,7 +4,8 @@ performParallelFits <- function(x,
                                 BPPARAM,
                                 seed,
                                 maxAttempts,
-                                alwaysPermute){
+                                alwaysPermute,
+                                verbose){
   # rename to fitModels
 
   # ---- Fit sigmoid models ----
@@ -15,7 +16,8 @@ performParallelFits <- function(x,
                                                            iter = iter,
                                                            seed = seed,
                                                            alwaysPermute = alwaysPermute,
-                                                           maxAttempts = maxAttempts),
+                                                           maxAttempts = maxAttempts,
+                                                           verbose = verbose),
                                    BPPARAM = BPPARAM)
   gc()
 
@@ -31,9 +33,9 @@ performParallelFits <- function(x,
   return(models)
 }
 
-fitToSubset <- function(subset, x, y, iter, seed, alwaysPermute, maxAttempts){
+fitToSubset <- function(subset, x, y, iter, seed, alwaysPermute, maxAttempts, verbose){
 
-  message(subset)
+  if (verbose) message(subset)
 
   idx <- which(iter == subset)
 
@@ -76,6 +78,9 @@ repeatSingleFit <- function(x, y,
   return(m)
 }
 
+#' Fit sigmoid model
+#'
+#' @export
 fitSingleSigmoid <- function(x, y, start){
   try(nls(formula = y ~ (1 - Pl)  / (1+exp((b - a/x))) + Pl,
           start = start,

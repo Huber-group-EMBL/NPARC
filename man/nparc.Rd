@@ -7,7 +7,7 @@
 nparc(x, y, id, groupsNull = NULL, groupsAlt,
   BPPARAM = BiocParallel::SerialParam(progressbar = TRUE), seed = 123,
   return_models = FALSE, maxAttempts = 100, alwaysPermute = TRUE,
-  df_type = c("theoretical", "estimate"))
+  df_type = c("theoretical", "empirical"))
 }
 \description{
 Main function

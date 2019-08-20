@@ -1,3 +1,52 @@
+#' Fit null and alternative models
+#'
+#' @export
+nparcFit <- function(x, y, id,
+                     groupsNull = NULL,
+                     groupsAlt,
+                     BPPARAM = BiocParallel::SerialParam(progressbar = TRUE),
+                     seed = 123,
+                     return_models = FALSE,
+                     verbose = FALSE,
+                     maxAttempts = 100,
+                     alwaysPermute = TRUE){
+
+  fitResNull <- invokeParallelFits(x = x,
+                                   y = y,
+                                   id = id,
+                                   groups = groupsNull,
+                                   BPPARAM = BPPARAM,
+                                   seed = seed,
+                                   maxAttempts = maxAttempts,
+                                   alwaysPermute = alwaysPermute,
+                                   return_models = return_models,
+                                   verbose = verbose)
+
+  fitResAlt <-  invokeParallelFits(x = x,
+                                   y = y,
+                                   id = id,
+                                   groups = groupsAlt,
+                                   BPPARAM = BPPARAM,
+                                   seed = seed,
+                                   maxAttempts = maxAttempts,
+                                   alwaysPermute = alwaysPermute,
+                                   return_models = return_models,
+                                   verbose = verbose)
+
+  predictions <- bind_rows(null = fitResNull$modelPredictions,
+                           alternative = fitResAlt$modelPredictions,
+                           .id = "modelType")
+
+  metrics <- bind_rows(null = fitResNull$modelMetrics,
+                       alternative = fitResAlt$modelMetrics,
+                       .id = "modelType")
+
+  return(list(predictions = predictions,
+              metrics = metrics))
+
+}
+
+
 invokeParallelFits <- function(x, y,
                                id,
                                groups,
@@ -5,7 +54,8 @@ invokeParallelFits <- function(x, y,
                                seed,
                                maxAttempts,
                                alwaysPermute,
-                               return_models){
+                               return_models,
+                               verbose){
 
   if (is.null(groups)){
     groups <- as.data.frame(matrix(nrow = length(id), ncol = 0))
@@ -28,7 +78,8 @@ invokeParallelFits <- function(x, y,
                                 BPPARAM = BPPARAM,
                                 seed = seed,
                                 maxAttempts = maxAttempts,
-                                alwaysPermute = alwaysPermute)
+                                alwaysPermute = alwaysPermute,
+                                verbose = verbose)
 
 
   message("... complete")
