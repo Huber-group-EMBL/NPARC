@@ -1,0 +1,399 @@
+---
+title: "Analysing thermal proteome profiling data with the NPARC pacakge"
+author: "Dorothee Childs, Nils Kurzawa"
+date: "`r format(Sys.time(), '%d %B %Y,   %X')`"
+bibliography: bibliography.bib
+output: 
+  BiocStyle::html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = FALSE)
+```
+
+
+# Introduction
+This vignette shows how to reproduce the analysis described by [Childs, Bach, Franken et al. (2019): Non-parametric analysis of thermal proteome profiles reveals novel drug-binding proteins](https://www.biorxiv.org/content/10.1101/373845v2) using the `NPARC` package.
+
+# Preparation
+
+Load necessary packages.
+```{r dependencies, message=FALSE}
+library(dplyr)
+library(magrittr)
+library(ggplot2)
+library(broom)
+library(knitr)
+library(NPARC)
+```
+
+
+# Data import
+
+First, we load data from a staurosporine TPP experiment [@Savitski2014]. The necessary ETL (extract, transform, load) steps have already been conducted to download the data from the supplements of the respective publication and convert them into tidy format (separate vignette to follow). 
+
+```{r load_data}
+data("stauro_TPP_data_tidy")
+```
+
+Before applying any further transformations and filters we create a copy of the imported data.
+```{r}
+df <- stauro_TPP_data_tidy
+```
+
+
+Let's perform a first check of the imported data:
+```{r data_head}
+df %>% 
+  mutate(compoundConcentration = factor(compoundConcentration), 
+         replicate = factor(replicate), 
+         dataset = factor(dataset)) %>% 
+  summary()
+
+```
+
+We can see that the data contains the following columns:
+
+- `dataset`: The dataset containing the measurements of several TMT-10 experiments. In each experiment, cells were treated with a vehicle or with the compound in one or two concentrations, and measured at ten different temperatures.
+- `uniqueID`: The unique identifier for each protein. In the given dataset, it contains the gene symbol concatenated by IPI id: `r head(df$uniqueID)` .
+- `relAbundance`: The relative signal intensity of the protein in each experiment, scaled to the intensity at the lowest temperature.
+- `temperature`: The temperatures corresponding to each of the ten measurements in a TMT experiment.
+- `compoundConcentration` The concentration of the administered compound in $\mu M$.
+- `replicate`: The replicate number in each experimental group. Each pair of vehicle and treatment experiments was conducted in two replicates.
+- `uniquePeptideMatches`: The number of unique peptides with which a protein was identified.
+
+# Data preprocessing and exploration
+
+The imported data contains contains **`r nrow(df)`** rows with entries for **`r length(unique(df$uniqueID))`** proteins.
+
+First, we remove all abundances that were not found with at least one unique peptide, or for which a missing value was recorded.
+```{r filter_qupm_or_NAs, results='asis'}
+df %<>% filter(uniquePeptideMatches >= 1)
+df %<>% filter(!is.na(relAbundance))
+```
+
+Next, we ensure that the dataset only contains proteins reproducibly observed with full melting curves in both replicates and treatment groups per dataset.
+A full melting curve is defined by the presence of measurements at all 10 temperatures for the given experimental group.
+
+```{r count_curves_per_protein}
+# Count full curves per protein
+df %<>%
+  group_by(dataset, uniqueID) %>%
+  mutate(n = n()) %>%
+  group_by(dataset) %>%
+  mutate(max_n = max(n)) %>% 
+  ungroup
+
+table(distinct(df, uniqueID, n)$n)
+```
+
+We see that the majority of proteins contain 40 measurements. This corresponds to two full replicate curves per experimental group. We will focus on these in the current analysis.
+
+```{r}
+# Filter for full curves per protein:
+df %<>% 
+  filter(n == max_n) %>%
+  dplyr::select(-n, -max_n)
+```
+
+
+The final data contains **`r nrow(df)`** rows with entries for **`r length(unique(df$uniqueID))`** proteins.
+This number coincides with the value reported in Table 1 of the corresponding publication [@Childs2019].
+
+
+# Illustrative example
+
+We first illustrate the principles of nonparametric analysis of response curves (NPARC) on an example protein (STK4) from the staurosporine dataset. The same protein is shown in Figures 1 and 2 of the paper.
+
+## Select data
+
+We first select all data entries belonging to the desired protein and dataset:
+```{r select_stk4}
+stk4 <- filter(df, uniqueID == "STK4_IPI00011488")
+```
+
+The table `stk4` has `r nrow(stk4)` rows with measurements of four experimental groups. They consist of two treatment groups (vehicle: $0~\mu M$ staurosporine, treatment: $20~\mu M$ staurosporine) with two replicates each. Let us look at the treatment group of replicate 1 for an example:
+```{r}
+stk4 %>% filter(compoundConcentration == 20, replicate == 1) %>% 
+  dplyr::select(-dataset) %>% kable(digits = 2)
+```
+
+
+To obtain a first impression of the measurements in each experimental group, we generate a plot of the measurements:
+```{r plot_stk4}
+stk4_plot_orig <- ggplot(stk4, aes(x = temperature, y = relAbundance)) +
+  geom_point(aes(shape = factor(replicate), color = factor(compoundConcentration)), size = 2) +
+  theme_bw() +
+  ggtitle("STK4") +
+  scale_color_manual("molar staurosporine concentration", 
+                     values = c("#808080", "#da7f2d"))
+print(stk4_plot_orig)
+```
+We will show how to add the fitted curves to this plot in the following steps.
+
+## Define function for model fitting
+To assess whether there is a significant difference between both treatment groups, we will fit a null model and an alternative models to the data. The null model fits a sigmoid melting curve through all data points irrespective of experimental condition. The alternative model fits separate melting curves per experimental group .
+
+## Fit and plot null models
+We use the `NPARC` package function `fitSingleSigmoid` to fit the null model:
+
+```{r fit_null_stk4}
+nullFit <- NPARC:::fitSingleSigmoid(x = stk4$temperature, y = stk4$relAbundance, start=c(Pl = 0, a = 550, b = 10))
+```
+
+The function returns an object of class `nls`:
+```{r summarize_null_stk4}
+summary(nullFit)
+```
+
+The function `augment` from the `broom` package provides a convenient way to obtain the predictions and residuals at each temperature in tabular format. By appending the returned predictions and residuals to our measurements, we ensure that relevant data is collected in the same table and can be added to the plot for visualization. The residuals will be needed later for construction of the test statistic:
+
+```{r augment_null_stk4}
+nullPredictions <- broom::augment(nullFit)
+```
+
+Let us look at the values returned by `augment` at two consecutive temperatures. Note that, while the predictions will be the same for each experiment at a given temperature, the residuals will differ because they were computed by comparing the predictions to the actual measurements:
+```{r head_augment_result}
+nullPredictions %>% filter(x %in% c(46, 49)) %>% kable()
+```
+
+
+Now we can append these values to our data frame and show the predicted curve in the plot:
+```{r add_null_resids_stk4}
+stk4$nullPrediction <- nullPredictions$.fitted
+stk4$nullResiduals <- nullPredictions$.resid
+
+stk4_plot <- stk4_plot_orig + geom_line(data = stk4, aes(y = nullPrediction))
+
+print(stk4_plot)
+```
+
+## Fit and plot alternative models
+
+Next we fit the alternative model. Again, we compute the predicted values and the corresponding residuals by the `broom::augment()` function. To take the compound concentration as a factor into account, we iterate over both concentrations and fit separate models to each subset. We implement this by first grouping the data using the function `dplyr::group_by()`, and starting the model fitting by `dplyr::do()`.
+
+```{r fit_alternative_stk4}
+alternativePredictions <- stk4 %>%
+# Fit separate curves per treatment group:
+  group_by(compoundConcentration) %>%
+  do({
+    fit = NPARC:::fitSingleSigmoid(x = .$temperature, y = .$relAbundance, start=c(Pl = 0, a = 550, b = 10))
+    broom::augment(fit)
+  }) %>%
+  ungroup %>%
+  # Rename columns for merge to data frame:
+  dplyr::rename(alternativePrediction = .fitted,
+                alternativeResiduals = .resid,
+                temperature = x,
+                relAbundance = y)
+```
+
+Add the predicted values and corresponding residuals to our data frame:
+```{r add_alternative_resids_stk4}
+stk4 <- stk4 %>%
+  left_join(alternativePredictions, 
+            by = c("relAbundance", "temperature", 
+                   "compoundConcentration")) %>%
+  distinct()
+```
+
+Add the curves predicted by the alternative model to the plot. Conceptually, it corresponds to the plot shown in Figures 2 (A)/(B) of the paper.
+
+```{r plot_Fig_2_A_B}
+stk4_plot <- stk4_plot +
+  geom_line(data = distinct(stk4, temperature, compoundConcentration, alternativePrediction), 
+            aes(y = alternativePrediction, color = factor(compoundConcentration)))
+
+print(stk4_plot)
+```
+
+This plot summarizes Figures 2(A) and 2(B) in the corresponding publication [@Childs2019].
+
+## Compute RSS values
+
+In order to quantify the improvement in goodness-of-fit of the alternative model relative to the null model, we compute the sum of squared residuals (RSS):
+
+```{r compute_rss_stk4}
+rssPerModel <- stk4 %>%
+  summarise(rssNull = sum(nullResiduals^2),
+            rssAlternative = sum(alternativeResiduals^2))
+
+kable(rssPerModel, digits = 4)
+```
+
+These values will be used to construct the $F$-statistic according to
+
+\begin{equation}
+\label{eq:f_stat}
+    {F} = \frac{{d}_{2}}{{d}_{1}} \cdot \frac{{RSS}^{0} - {RSS}^{1}}{{RSS}^{1}}.
+\end{equation}
+
+To compute this statistic and to derive a p-value, we need the degrees of freedom ${d}_{1}$ and ${d}_{2}$. As described in the paper, they cannot be analytically derived due to the correlated nature of the measurements. The paper describes how to estimate these values from the RSS-values of all proteins in the dataset. In the following Section, we illustrate how to repeat the model fitting for all proteins of a dataset and how to perform hypothesis testing on these models.
+
+# Extend the analysis to all proteins 
+
+## Start fitting
+In order to analyze all datasets as described in the paper, we fit null and alternative models to all proteins using the package function `nparcFit`:
+
+```{r fit_all_proteins, cache=TRUE}
+fits <- nparcFit(x = df$temperature, 
+                 y = df$relAbundance, 
+                 id = df$uniqueID, 
+                 groupsNull = NULL, 
+                 groupsAlt = df$compoundConcentration,
+                 #BPPARAM = BiocParallel::SnowParam(workers = 4),
+                 return_models = FALSE,
+                 verbose = FALSE)
+
+str(fits, 1)
+```
+
+The returned object `fits` contains two tables. The table `metrics` contains the fitted parameters and goodness-of-fit measures for the null and alternative models per protein and group. The table `predictions` contains the corresponding predicted values and residuals per model.
+
+```{r show_fit_results}
+fits$metrics %>% 
+  mutate(modelType = factor(modelType), nCoeffs = factor(nCoeffs), nFitted = factor(nFitted), group = factor((group))) %>% 
+  summary
+
+fits$predictions %>% 
+  mutate(modelType = factor(modelType), group = factor((group))) %>% 
+  summary
+```
+
+## Check example
+
+The results of the STK4 example from earlier can be found in this object as follows.
+
+First, we check the RSS values of the null and alterantive models:
+```{r show_stk4_results}
+stk4Metrics <- filter(fits$metrics, id == "STK4_IPI00011488")
+
+rssNull <- filter(stk4Metrics, modelType == "null")$rss
+rssAlt <- sum(filter(stk4Metrics, modelType == "alternative")$rss) # Summarize over both experimental groups
+
+rssNull
+rssAlt
+```
+
+Next, we plot the predicted curves per model and experimental group:
+```{r plot_stk4_results}
+stk4Predictions <- filter(fits$predictions, modelType == "alternative", id == "STK4_IPI00011488")
+
+stk4_plot_orig +
+  geom_line(data = filter(stk4Predictions, modelType == "alternative"), 
+            aes(x = x, y = .fitted, color = factor(group))) +
+    geom_line(data = filter(stk4Predictions, modelType == "null"), 
+            aes(x = x, y = .fitted))
+```
+
+# Compute test statistics
+
+## Why we need to estimate the degrees of freedom
+
+In order to compute $F$-statistics per protein and dataset according to Equation (\ref{eq:f_stat}), we need to know the degrees of freedom of the corresponding null distribution. If we could assume independent and identically distributed (iid) residuals, we could compute them from the number of fitted values and model parameters. In the following, we will show why this simple equation is not appropriate for the curve data we are working with.
+
+First, we compute the test statistics and p-values with theoretical degrees of freedom. These would be true for the case of iid residuals:
+```{r testDOFiid}
+modelMetrics <- fits$metrics 
+fStats <- nparcFtest(modelMetrics, df_type = "theoretical")
+```
+
+Let us take a look at the computed degrees of freedom:
+```{r plotF_DOFiid}
+fStats %>% 
+  filter(!is.na(pAdj)) %>%
+  distinct(nFittedNull, nFittedAlt, nCoeffsNull, nCoeffsAlt, df1, df2) %>%
+  kable()
+```
+
+
+We plot the $F$-statistics against the theoretical $F$-distribution to check how well the null distribution is approximated now:
+
+```{r plotFiid}
+ggplot(filter(fStats, !is.na(pAdj))) +
+  geom_density(aes(x = F), fill = "steelblue", alpha = 0.5) +
+  geom_line(aes(x = F, y = df(F, df1 = df1, df2 = df2)), color = "darkred", size = 1.5) +
+  theme_bw() +
+  # Zoom in to small values to increase resolution for the proteins under H0:
+  xlim(c(0, 10))
+```
+
+The densities of the theoretical $F$-distribution (red) do not fit the observed values (blue) very well. While the theoretical distribution tends to overestimate the number of proteins with test statistics smaller than 2.5, it appears to underestimate the amount of proteins with larger values.  This would imply that even for highly specific drugs, we observe many more significant differences than we would expect by chance. This hints at an anti-conservative behaviour of our test with the calculated degree of freedom parameters. This is reflected in the p-value distributions. If the distribution assumptions were met, we would expect the null cases to follow a uniform distribution, with a peak on the left for the non-null cases. Instead, we observe a tendency to obtain fewer values than expected in the middle range (around 0.5), but distinct peaks to the left.
+
+```{r plotPiid}
+ggplot(filter(fStats, !is.na(pAdj))) +
+  geom_histogram(aes(x = pVal, y = ..density..), fill = "steelblue", alpha = 0.5, boundary = 0, bins = 30) +
+  geom_line(aes(x = pVal, y = dunif(pVal)), color = "darkred", size = 1.5) +
+  theme_bw()
+```
+
+## How to estimate the degrees of freedom
+
+In the paper, we describe an alternative way to estimate the degrees of freedom by fitting $\chi^2$ distributions to the numerator and denominator across all proteins in a dataset. To enable fitting of the distributions, we first need to re-scale the variables by a scaling factor. Because the scaling factors are characteristic for each dataset (it depends on the variances of the residuals in the respective dataset), we estimate them from the data according to:
+
+\begin{align} \label{eq:scale-param}
+\sigma_0^2 &= \frac{1}{2} \frac{V}{M},
+\end{align}
+
+where $V$ is the variance of the distribution, and $M$ is the mean of the distribution.
+
+The following functin estimates $V$ and $M$ from the empirical distributions of the RSS differences $({RSS}^1 - {RSS}^0)$. To increase robustness, it estimate $M$ and $V$ by their D-estimates @Marazzi2002 (median and median absolute deviation). 
+It then scales the numerator and denominator of the $F$-statistic by these scaling factors and estimate the degree of freedom parameters by fitting unscaled $\chi^2$ distributions. Finally, it fits the degrees of freedom parameters numerically, computes the test statistics according to Equation (\ref{eq:f_stat}) and derives p-values.
+
+
+```{r testDOFemp}
+modelMetrics <- fits$metrics 
+fStats <- nparcFtest(modelMetrics, df_type = "empirical")
+```
+
+
+
+We plot the $F$-statistics against the theoretical $F$-distribution to check how well the null distribution is approximated now:
+
+```{r plotFnew}
+ggplot(filter(fStats, !is.na(pAdj))) +
+  geom_density(aes(x = F), fill = "steelblue", alpha = 0.5) +
+  geom_line(aes(x = F, y = df(F, df1 = df1, df2 = df2)), color = "darkred", size = 1.5) +
+  theme_bw() +
+  # Zoom in to small values to increase resolution for the proteins under H0:
+  xlim(c(0, 10))
+```
+
+Also check the p-value histograms. We expect the null cases to follow a uniform distribution, with a peak on the left for the non-null cases:
+
+```{r plotPnew}
+ggplot(filter(fStats, !is.na(pAdj))) +
+  geom_histogram(aes(x = pVal, y = ..density..), fill = "steelblue", alpha = 0.5, boundary = 0, bins = 30) +
+  geom_line(aes(x = pVal, y = dunif(pVal)), color = "darkred", size = 1.5) +
+  theme_bw()
+```
+
+The $F$-statistics and p-values approximate the expected distributions substantially closer when based on the estimated degrees of freedom than when based on the theoretical degrees of freedom.
+
+# Detect significantly shifted proteins
+
+Finally, we can select proteins that are significantly shifted by putting a threshold on the Benjamini-Hochberg corrected p-values.
+
+```{r selectHits}
+topHits <- fStats %>% 
+  filter(pAdj <= 0.01) %>%
+  dplyr::select(id, F, pVal, pAdj) %>%
+  arrange(-F)
+```
+
+The table `topHits` contains **`r nrow(topHits)`** proteins with Benjamini-Hochberg corrected p-values $\leq 0.01$.
+
+
+Let us look at the targets detected in each dataset. The same proteins are shown in Fig. S3, S4, S6, and S7 of the paper.
+```{r showHits, results='asis'}
+knitr::kable(topHits)
+```
+
+
+# Session info
+
+```{r session}
+devtools::session_info()
+```
+
+# Bibliography
