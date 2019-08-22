@@ -138,7 +138,7 @@ To assess whether there is a significant difference between both treatment group
 We use the `NPARC` package function `fitSingleSigmoid` to fit the null model:
 
 ```{r fit_null_stk4}
-nullFit <- NPARC:::fitSingleSigmoid(x = stk4$temperature, y = stk4$relAbundance, start=c(Pl = 0, a = 550, b = 10))
+nullFit <- NPARC:::fitSingleSigmoid(x = stk4$temperature, y = stk4$relAbundance)
 ```
 
 The function returns an object of class `nls`:
@@ -232,6 +232,9 @@ To compute this statistic and to derive a p-value, we need the degrees of freedo
 
 # Extend the analysis to all proteins 
 
+This section describes the different steps of the NPARC workflow for model fitting and hyothesis testing. Note that the package also provides a function `nparc()` that performs all of the following steps with one single function call.
+
+
 ## Start fitting
 In order to analyze all datasets as described in the paper, we fit null and alternative models to all proteins using the package function `nparcFit`:
 
@@ -241,9 +244,7 @@ fits <- nparcFit(x = df$temperature,
                  id = df$uniqueID, 
                  groupsNull = NULL, 
                  groupsAlt = df$compoundConcentration,
-                 #BPPARAM = BiocParallel::SnowParam(workers = 4),
-                 return_models = FALSE,
-                 verbose = FALSE)
+                 return_models = FALSE)
 
 str(fits, 1)
 ```

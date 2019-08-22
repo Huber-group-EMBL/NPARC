@@ -1,12 +1,140 @@
-performParallelFits <- function(x,
-                                y,
-                                iter,
-                                BPPARAM,
-                                seed,
-                                maxAttempts,
-                                alwaysPermute,
-                                verbose){
-  # rename to fitModels
+#' Fit null and alternative models for Non-parametric analysis of response curves
+#'
+#' Fit melting curve and return model metrics as well as predictions for the null and alternative models.
+#'
+#' @param x numeric vector of the independent variables (typically temperature)
+#' @param y numeric vector of the dependent variables (typically relative abundance measurements)
+#' @param id character vector with the protein ID to which each each data point belongs.
+#' @param control list of parameters used to control specific parts of the analyse
+#' @param BPPARAM BiocParallel parameter object to invoke curve fitting in parallel. Default: BiocParallel::SerialParam()
+#' @param return_models boolean value. If true, the fitted models are returned together with the test results
+#'
+#' @import dplyr tidyr
+#' @export
+#' @examples
+#' data(stauro_TPP_data_tidy)
+#' df <- head(stauro_TPP_data_tidy, 100)
+#' testResults <- nparc(x = df$temperature,
+#'                      y = df$relAbundance,
+#'                      id = df$uniqueID,
+#'                      groupsAlt = df$compoundConcentration,
+#'                      df_type = "empirical")
+#' @export
+nparcFit <- function(x, y, id,
+                     control = getParams(),
+                     groupsNull = NULL,
+                     groupsAlt,
+                     BPPARAM = BiocParallel::SerialParam(progressbar = TRUE),
+                     return_models = FALSE){
+
+  fitResNull <- invokeParallelFits(x = x,
+                                   y = y,
+                                   id = id,
+                                   groups = groupsNull,
+                                   BPPARAM = BPPARAM,
+                                   seed = control$seed,
+                                   maxAttempts = control$maxAttempts,
+                                   return_models = return_models,
+                                   start = control$start)
+
+  fitResAlt <-  invokeParallelFits(x = x,
+                                   y = y,
+                                   id = id,
+                                   groups = groupsAlt,
+                                   BPPARAM = BPPARAM,
+                                   seed = control$seed,
+                                   maxAttempts = control$maxAttempts,
+                                   return_models = return_models,
+                                   start = control$start)
+
+  predictions <- bind_rows(null = fitResNull$modelPredictions,
+                           alternative = fitResAlt$modelPredictions,
+                           .id = "modelType")
+
+  metrics <- bind_rows(null = fitResNull$modelMetrics,
+                       alternative = fitResAlt$modelMetrics,
+                       .id = "modelType")
+
+  return(list(predictions = predictions,
+              metrics = metrics))
+
+}
+
+
+invokeParallelFits <- function(x, y,
+                               id,
+                               groups,
+                               BPPARAM,
+                               seed,
+                               maxAttempts,
+                               return_models,
+                               start){
+
+  if (is.null(groups)){
+    groups <- as.data.frame(matrix(nrow = length(id), ncol = 0))
+  } else if (is.vector(groups)){
+    groups <- data.frame(group = groups, stringsAsFactors = FALSE)
+  }
+  group_names <- colnames(groups)
+
+  groups <- groups %>%
+    mutate(id = id) %>%
+    unite("iter", !!c("id", group_names), remove = FALSE)
+
+  # ---- Fit models ----
+  t1 <- Sys.time()
+  message("Starting model fitting...")
+
+  models <- fitAllModels(x = x,
+                         y = y,
+                         iter = groups$iter,
+                         BPPARAM = BPPARAM,
+                         seed = seed,
+                         maxAttempts = maxAttempts,
+                         start = start)
+
+
+  message("... complete")
+  timeDiff <- Sys.time() - t1
+  message("Elapsed time: ", round(timeDiff, 2), " ", units(timeDiff), "\n")
+
+  # ---- Flag successful model fits ----
+  message("Flagging successful model fits...")
+
+  fits <- groups %>%
+    group_by_(.dots = c("iter", "id", group_names)) %>%
+    distinct_(.dots = groups(.)) %>%
+    do(fittedModel = models[[.$iter]]) %>%
+    ungroup %>%
+    ## Mark proteins where model fit was not successful
+    mutate(successfulFit = (sapply(fittedModel, class) != "try-error"))
+
+  message("... complete.\n")
+
+  # ---- Evaluate successful model fits ----
+  message("Evaluating model fits...")
+
+  fitResults <- evalModels(fits = fits,
+                           x = x,
+                           groups = group_names)
+
+  if (return_models) {
+    fitResults$fittedModels <- fits
+  } else {
+    fitResults$fittedModels <- NULL
+  }
+
+  return(fitResults)
+}
+
+
+fitAllModels <- function(x,
+                         y,
+                         iter,
+                         BPPARAM,
+                         seed,
+                         maxAttempts,
+                         start){
 
   # ---- Fit sigmoid models ----
   models <- BiocParallel::bplapply(unique(iter),
@@ -15,9 +143,8 @@ performParallelFits <- function(x,
                                                            y = y,
                                                            iter = iter,
                                                            seed = seed,
-                                                           alwaysPermute = alwaysPermute,
                                                            maxAttempts = maxAttempts,
-                                                           verbose = verbose),
+                                                           start = start),
                                    BPPARAM = BPPARAM)
   gc()
 
@@ -33,17 +160,15 @@ performParallelFits <- function(x,
   return(models)
 }
 
-fitToSubset <- function(subset, x, y, iter, seed, alwaysPermute, maxAttempts, verbose){
-
-  if (verbose) message(subset)
+fitToSubset <- function(subset, x, y, iter, seed, maxAttempts, start){
 
   idx <- which(iter == subset)
 
   model <- repeatSingleFit(x = x[idx],
                            y = y[idx],
                            seed = seed,
-                           alwaysPermute = alwaysPermute,
-                           maxAttempts = maxAttempts)
+                           maxAttempts = maxAttempts,
+                           start = start)
 
   attr(model, "iter") <- subset
 
@@ -52,16 +177,18 @@ fitToSubset <- function(subset, x, y, iter, seed, alwaysPermute, maxAttempts, ve
 }
 
 
+#' Wrapper to repeat the fit until model has converged
+#'
+#' @param seed Random seed to control resampling in case of unsuccessful model fits
+#' @param maxAttemps number of resampling steps in case of unsuccessful model fits
 repeatSingleFit <- function(x, y,
                             start,
                             seed = NULL,
-                            alwaysPermute = FALSE,
                             maxAttempts = 100){
 
   i <- 0
   doFit <- TRUE
-  doVaryPars <- alwaysPermute
-  start <- c(Pl = 0, a = 550, b = 10)
+  doVaryPars <- FALSE
 
   if (!is.null(seed)){
     set.seed(seed)
@@ -80,8 +207,15 @@ repeatSingleFit <- function(x, y,
 
 #' Fit sigmoid model
 #'
+#' @param x numeric vector of the independent variables (typically temperature)
+#' @param y numeric vector of the dependent variables (typically relative abundance measurements)
+#' @param start numeric vector of start parameters for the melting curve equation
 #' @export
-fitSingleSigmoid <- function(x, y, start){
+#' @details
+#' Fits the following function to the data:
+#' \eqn{y = (1 - Pl)  / (1+exp((b - a/x))) + Pl}
+#'
+fitSingleSigmoid <- function(x, y, start=c(Pl = 0, a = 550, b = 10)){
   try(nls(formula = y ~ (1 - Pl)  / (1+exp((b - a/x))) + Pl,
           start = start,
           data = list(x=x, y=y),
@@ -93,5 +227,7 @@ fitSingleSigmoid <- function(x, y, start){
       silent = TRUE)
 }
 
-
+getParams <- function(){
+  list(start = c(Pl = 0, a = 550, b = 10), seed = 123, maxAttempts = 100)
+}
 

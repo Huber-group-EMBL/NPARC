@@ -28,6 +28,9 @@ aggregateRSS <- function(id, rss, nCoeffs, nFitted){
 
 #' Perform F-test
 #'
+#' @param modelMetrics data.frame with results of the model fit in long format.
+#' @param df_type character value indicating the method for degrees of freedom computation for the F-test. Theoretical yields the text-book solution. Empirical yields estimates derived from the distribution moments of the RSS.
+#'
 #' @export
 nparcFtest <- function(modelMetrics, df_type = c("empirical", "theoretical")){
 

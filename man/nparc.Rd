@@ -2,21 +2,36 @@
 % Please edit documentation in R/main.R
 \name{nparc}
 \alias{nparc}
-\title{Main function}
+\title{Non-parametric analysis of response curves}
 \usage{
 nparc(x, y, id, groupsNull = NULL, groupsAlt,
-  BPPARAM = BiocParallel::SerialParam(progressbar = TRUE), seed = 123,
-  return_models = FALSE, maxAttempts = 100, alwaysPermute = TRUE,
-  df_type = c("theoretical", "empirical"))
+  BPPARAM = BiocParallel::SerialParam(progressbar = TRUE),
+  df_type = c("theoretical", "empirical"), control = getParams())
+}
+\arguments{
+\item{x}{numeric vector of the independent variables (typically temperature)}
+
+\item{y}{numeric vector of the dependent variables (typically relative abundance measurements)}
+
+\item{BPPARAM}{BiocParallel parameter object to invoke curve fitting in parallel. Default: BiocParallel::SerialParam()}
+
+\item{df_type}{character value indicating the method for degrees of freedom computation for the F-test. Theoretical yields the text-book solution. Empirical yields estimates derived from the distribution moments of the RSS.}
+
+\item{control}{list of parameters used to control specific parts of the analyse}
+
+\item{seed}{Random seed to control resampling in case of unsuccessful model fits}
+
+\item{maxAttemps}{number of resampling steps in case of unsuccessful model fits}
 }
 \description{
-Main function
+Wrapper function for melting curve fitting and hypothesis testing.
 }
 \examples{
-data(staurosporineTPP)
-nparc(x = staurosporineTPP$temperature,
-      y = staurosporineTPP$relAbundance,
-      id = staurosporineTPP$uniqueID,
-      groupsAlt = staurosporineTPP$compoundConcentration)
-
+data(stauro_TPP_data_tidy)
+df <- head(stauro_TPP_data_tidy, 100)
+testResults <- nparc(x = df$temperature,
+                     y = df$relAbundance,
+                     id = df$uniqueID,
+                     groupsAlt = df$compoundConcentration,
+                     df_type = "empirical")
 }

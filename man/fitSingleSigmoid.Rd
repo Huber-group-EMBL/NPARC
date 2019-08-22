@@ -4,8 +4,19 @@
 \alias{fitSingleSigmoid}
 \title{Fit sigmoid model}
 \usage{
-fitSingleSigmoid(x, y, start)
+fitSingleSigmoid(x, y, start = c(Pl = 0, a = 550, b = 10))
+}
+\arguments{
+\item{x}{numeric vector of the independent variables (typically temperature)}
+
+\item{y}{numeric vector of the dependent variables (typically relative abundance measurements)}
+
+\item{start}{numeric vector of start parameters for the melting curve equation}
 }
 \description{
 Fit sigmoid model
+}
+\details{
+Fits the following function to the data:
+\eqn{y = (1 - Pl)  / (1+exp((b - a/x))) + Pl}
 }
