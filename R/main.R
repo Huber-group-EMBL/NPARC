@@ -10,7 +10,6 @@
 #' @param maxAttemps number of resampling steps in case of unsuccessful model fits
 #' @param df_type character value indicating the method for degrees of freedom computation for the F-test. Theoretical yields the text-book solution. Empirical yields estimates derived from the distribution moments of the RSS.
 #'
-#' @import dplyr tidyr
 #' @export
 #'
 #' @examples

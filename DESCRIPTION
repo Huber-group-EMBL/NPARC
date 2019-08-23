@@ -16,7 +16,8 @@ Imports:
     tidyr,
     BiocParallel,
     broom,
-    MASS
+    MASS,
+    rlang
 Suggests: 
     testthat,
     devtools,

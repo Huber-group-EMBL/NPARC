@@ -81,6 +81,11 @@ nparcFtest <- function(modelMetrics, df_type = c("empirical", "theoretical")){
   return(out)
 }
 
+#' Estimate degrees of freedom
+#'
+#' Estimate degrees of freedom from distribution moments of the RSS
+#'
+#' @importFrom MASS fitdistr
 estimate_df <- function(rss1, rssDiff){!is.na(rssDiff)
 
   rm_idx <- is.na(rssDiff) | (rssDiff < 0)

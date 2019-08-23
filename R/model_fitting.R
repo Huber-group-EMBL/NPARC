@@ -9,7 +9,6 @@
 #' @param BPPARAM BiocParallel parameter object to invoke curve fitting in parallel. Default: BiocParallel::SerialParam()
 #' @param return_models boolean value. If true, the fitted models are returned together with the test results
 #'
-#' @import dplyr tidyr
 #' @export
 #' @examples
 #' data(stauro_TPP_data_tidy)
@@ -125,7 +124,6 @@ invokeParallelFits <- function(x, y,
 
   return(fitResults)
 }
-
 
 fitAllModels <- function(x,
                          y,

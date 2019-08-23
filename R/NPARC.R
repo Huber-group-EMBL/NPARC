@@ -8,5 +8,8 @@
 #' @docType package
 #' @name NPARC
 #' @importFrom rlang .data
+#' @import dplyr
+#' @import tidyr
+#' @import BiocParallel
 NULL
 
