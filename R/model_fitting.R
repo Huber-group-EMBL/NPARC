@@ -13,12 +13,12 @@
 #' @examples
 #' data(stauro_TPP_data_tidy)
 #' df <- head(stauro_TPP_data_tidy, 100)
-#' testResults <- nparcFit(x = df$temperature,
+#' testResults <- NPARCfit(x = df$temperature,
 #'                      y = df$relAbundance,
 #'                      id = df$uniqueID,
 #'                      groupsAlt = df$compoundConcentration)
 #' @export
-nparcFit <- function(x, y, id,
+NPARCfit <- function(x, y, id,
                      control = getParams(),
                      groupsNull = NULL,
                      groupsAlt,
@@ -100,8 +100,8 @@ invokeParallelFits <- function(x, y,
   message("Flagging successful model fits...")
 
   fits <- groups %>%
-    group_by_(.dots = c("iter", "id", group_names)) %>%
-    distinct_(.dots = groups(.)) %>%
+    group_by_at(c("iter", "id", group_names)) %>%
+    distinct_at(as.character(groups(.))) %>%
     do(fittedModel = models[[.$iter]]) %>%
     ungroup %>%
     ## Mark proteins where model fit was not successful

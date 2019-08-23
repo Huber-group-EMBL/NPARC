@@ -11,5 +11,6 @@
 #' @import dplyr
 #' @import tidyr
 #' @import BiocParallel
+#' @importFrom magrittr %<>%
 NULL
 

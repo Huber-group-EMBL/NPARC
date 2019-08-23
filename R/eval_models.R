@@ -18,7 +18,7 @@ augmentModels <- function(fits, groups){
 
   modelPredictions <- fits %>%
     filter(successfulFit) %>%
-    group_by_(.dots = c("iter", "id", groups)) %>%
+    group_by_at(c("iter", "id", groups)) %>%
     do(augment(.$fittedModel[[1]])) %>%
     ungroup %>%
     right_join(fits %>% select(!!c("iter", "id", groups))) %>% # fill for unsuccessful fits
@@ -37,7 +37,7 @@ assessModelMetrics <- function(fits, x, groups){
 
   metrics <- fits %>%
     #filter(successfulFit) %>%
-    group_by_(.dots = c("iter", "id", groups)) %>%
+    group_by_at(c("iter", "id", groups)) %>%
     do(assessSingleModel(nls_obj = .$fittedModel[[1]],
                          xVec = unique(x))) %>%
     ungroup %>%

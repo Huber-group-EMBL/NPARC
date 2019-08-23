@@ -236,10 +236,10 @@ This section describes the different steps of the NPARC workflow for model fitti
 
 
 ## Start fitting
-In order to analyze all datasets as described in the paper, we fit null and alternative models to all proteins using the package function `nparcFit`:
+In order to analyze all datasets as described in the paper, we fit null and alternative models to all proteins using the package function `NPARCfit`:
 
 ```{r fit_all_proteins, cache=TRUE}
-fits <- nparcFit(x = df$temperature, 
+fits <- NPARCfit(x = df$temperature, 
                  y = df$relAbundance, 
                  id = df$uniqueID, 
                  groupsNull = NULL, 
@@ -296,7 +296,7 @@ In order to compute $F$-statistics per protein and dataset according to Equation
 First, we compute the test statistics and p-values with theoretical degrees of freedom. These would be true for the case of iid residuals:
 ```{r testDOFiid}
 modelMetrics <- fits$metrics 
-fStats <- nparcFtest(modelMetrics, df_type = "theoretical")
+fStats <- NNPARCtest(modelMetrics, df_type = "theoretical")
 ```
 
 Let us take a look at the computed degrees of freedom:
@@ -344,7 +344,7 @@ It then scales the numerator and denominator of the $F$-statistic by these scali
 
 ```{r testDOFemp}
 modelMetrics <- fits$metrics 
-fStats <- nparcFtest(modelMetrics, df_type = "empirical")
+fStats <- NNPARCtest(modelMetrics, df_type = "empirical")
 ```
 
 

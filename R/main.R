@@ -27,7 +27,7 @@ runNPARC <- function(x, y, id,
                   df_type = c("theoretical", "empirical"),
                   control = getParams()){
 
-  fits <- nparcFit(x = x,
+  fits <- NPARCfit(x = x,
                    y = y,
                    id = id,
                    groupsNull = groupsNull,
@@ -38,7 +38,7 @@ runNPARC <- function(x, y, id,
 
     modelMetrics <- fits$metrics
 
-    testRes <-  nparcFtest(modelMetrics, df_type = df_type)
+    testRes <-  NPARCtest(modelMetrics, df_type = df_type)
 
   return(testRes)
 }
