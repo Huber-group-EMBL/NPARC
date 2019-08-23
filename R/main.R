@@ -12,15 +12,16 @@
 #'
 #' @import dplyr tidyr
 #' @export
+#'
 #' @examples
 #' data(stauro_TPP_data_tidy)
 #' df <- head(stauro_TPP_data_tidy, 100)
-#' testResults <- nparc(x = df$temperature,
+#' testResults <- runNPARC(x = df$temperature,
 #'                      y = df$relAbundance,
 #'                      id = df$uniqueID,
 #'                      groupsAlt = df$compoundConcentration,
 #'                      df_type = "empirical")
-nparc <- function(x, y, id,
+runNPARC <- function(x, y, id,
                   groupsNull = NULL,
                   groupsAlt,
                   BPPARAM = BiocParallel::SerialParam(progressbar = TRUE),

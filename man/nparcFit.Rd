@@ -27,9 +27,8 @@ Fit melting curve and return model metrics as well as predictions for the null a
 \examples{
 data(stauro_TPP_data_tidy)
 df <- head(stauro_TPP_data_tidy, 100)
-testResults <- nparc(x = df$temperature,
+testResults <- nparcFit(x = df$temperature,
                      y = df$relAbundance,
                      id = df$uniqueID,
-                     groupsAlt = df$compoundConcentration,
-                     df_type = "empirical")
+                     groupsAlt = df$compoundConcentration)
 }

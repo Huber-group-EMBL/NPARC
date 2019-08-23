@@ -232,7 +232,7 @@ To compute this statistic and to derive a p-value, we need the degrees of freedo
 
 # Extend the analysis to all proteins 
 
-This section describes the different steps of the NPARC workflow for model fitting and hyothesis testing. Note that the package also provides a function `nparc()` that performs all of the following steps with one single function call.
+This section describes the different steps of the NPARC workflow for model fitting and hyothesis testing. Note that the package also provides a function `runNPARC()` that performs all of the following steps with one single function call.
 
 
 ## Start fitting
