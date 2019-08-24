@@ -13,22 +13,27 @@ runNPARC(x, y, id, groupsNull = NULL, groupsAlt,
 
 \item{y}{numeric vector of the dependent variables (typically relative abundance measurements)}
 
+\item{id}{character vector with the protein ID to which each each data point belongs.}
+
+\item{groupsNull}{one or more vectors with grouping variables for the null models. See details.}
+
+\item{groupsAlt}{one or more vectors with grouping variables for the alternative models. See details.}
+
 \item{BPPARAM}{BiocParallel parameter object to invoke curve fitting in parallel. Default: BiocParallel::SerialParam()}
 
 \item{df_type}{character value indicating the method for degrees of freedom computation for the F-test. Theoretical yields the text-book solution. Empirical yields estimates derived from the distribution moments of the RSS.}
 
 \item{control}{list of parameters used to control specific parts of the analyse}
-
-\item{seed}{Random seed to control resampling in case of unsuccessful model fits}
-
-\item{maxAttemps}{number of resampling steps in case of unsuccessful model fits}
 }
 \description{
 Wrapper function for melting curve fitting and hypothesis testing.
 }
+\details{
+\code{groupsNull} or \code{groupsAlt} can either be a single vector each, or data.frames of the same length as \code{x} and \code{y} with one column per factor
+}
 \examples{
 data(stauro_TPP_data_tidy)
-df <- head(stauro_TPP_data_tidy, 100)
+df <- dplyr::filter(stauro_TPP_data_tidy, grepl("MAPK|ATP|CDK|GTP|CRK", uniqueID))
 testResults <- runNPARC(x = df$temperature,
                      y = df$relAbundance,
                      id = df$uniqueID,

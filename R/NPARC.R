@@ -12,5 +12,8 @@
 #' @import tidyr
 #' @import BiocParallel
 #' @importFrom magrittr %<>%
+#' @importFrom stats coefficients fitted resid D vcov integrate predict nobs median mad nls na.omit nls.control runif
+#' @importFrom broom augment
+#' @importFrom MASS fitdistr
 NULL
 

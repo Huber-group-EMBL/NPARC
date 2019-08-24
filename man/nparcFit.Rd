@@ -17,6 +17,10 @@ NPARCfit(x, y, id, control = getParams(), groupsNull = NULL, groupsAlt,
 
 \item{control}{list of parameters used to control specific parts of the analyse}
 
+\item{groupsNull}{one or more vectors with grouping variables for the null models. See details.}
+
+\item{groupsAlt}{one or more vectors with grouping variables for the alternative models. See details.}
+
 \item{BPPARAM}{BiocParallel parameter object to invoke curve fitting in parallel. Default: BiocParallel::SerialParam()}
 
 \item{return_models}{boolean value. If true, the fitted models are returned together with the test results}
@@ -24,11 +28,17 @@ NPARCfit(x, y, id, control = getParams(), groupsNull = NULL, groupsAlt,
 \description{
 Fit melting curve and return model metrics as well as predictions for the null and alternative models.
 }
+\details{
+\code{groupsNull} or \code{groupsAlt} can either be a single vector each, or data.frames of the same length as \code{x} and \code{y} with one column per factor
+}
 \examples{
 data(stauro_TPP_data_tidy)
-df <- head(stauro_TPP_data_tidy, 100)
-testResults <- NPARCfit(x = df$temperature,
+df <- dplyr::filter(stauro_TPP_data_tidy, grepl("MAPK|ATP|CDK|GTP|CRK", uniqueID))
+testResults <- runNPARC(x = df$temperature,
                      y = df$relAbundance,
                      id = df$uniqueID,
-                     groupsAlt = df$compoundConcentration)
+                     groupsAlt = df$compoundConcentration,
+                     df_type = "empirical")
+
+
 }

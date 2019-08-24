@@ -1,6 +1,5 @@
-#' Invoke model evaluation
-#'
 evalModels <- function(fits, groups, x){
+  # Invoke model evaluation
 
   modelMetrics <- assessModelMetrics(fits = fits, x = x, groups = groups)
   modelPredictions <- augmentModels(fits = fits, groups = groups)
@@ -8,21 +7,19 @@ evalModels <- function(fits, groups, x){
   return(list(modelMetrics = modelMetrics, modelPredictions = modelPredictions))
 }
 
-#' Augment model to obtain data frame with measurements, predictions and residuals.
-#'
-#'@importFrom broom augment
 augmentModels <- function(fits, groups){
+  # Augment model to obtain data frame with measurements, predictions and residuals.
 
   # ---- Computing model predictions and residuals ----
   message("Computing model predictions and residuals ...")
 
   modelPredictions <- fits %>%
-    filter(successfulFit) %>%
+    filter(.data$successfulFit) %>%
     group_by_at(c("iter", "id", groups)) %>%
-    do(augment(.$fittedModel[[1]])) %>%
+    do(augment(.data$fittedModel[[1]])) %>%
     ungroup %>%
-    right_join(fits %>% select(!!c("iter", "id", groups))) %>% # fill for unsuccessful fits
-    select(-iter)
+    right_join(fits %>% select(!!c("iter", "id", groups)), by = c("iter", "id", groups)) %>% # fill for unsuccessful fits
+    select(-.data$iter)
 
   message("... complete.\n")
 
@@ -30,27 +27,23 @@ augmentModels <- function(fits, groups){
 
 }
 
-#' Invoke calculation of performance metrics per model
-#'
 assessModelMetrics <- function(fits, x, groups){
+  # Invoke calculation of performance metrics per model
+
   message("Evaluating models ...")
 
   metrics <- fits %>%
-    #filter(successfulFit) %>%
     group_by_at(c("iter", "id", groups)) %>%
-    do(assessSingleModel(nls_obj = .$fittedModel[[1]],
+    do(assessSingleModel(nls_obj = .data$fittedModel[[1]],
                          xVec = unique(x))) %>%
     ungroup %>%
-    # right_join(fits %>% select(!!c("iter", "id", groups))) %>% # fill for unsuccessful fits
-    select(-iter)
+    select(-.data$iter)
 
   message("... complete.\n")
 
   return(metrics)
 }
 
-#' Retrieve fitted parameters from model
-#'
 assessSingleModel <- function(nls_obj, xVec){
 
   if (any(is.na(xVec))){
@@ -98,22 +91,3 @@ assessSingleModel <- function(nls_obj, xVec){
                     tm_sd = tm_sd, nCoeffs = nCoeffs, nFitted = nFitted, conv = conv))
 }
 
-
-# augmentSingleModel <- function(nls_obj){
-#   #' Compute predictions and residuals for a single model
-#   #'
-#   #' @importFrom broom augment
-#
-#   modelPredictions <- broom::augment(nls_obj) #%>%
-#     # mutate(type = "measurement_available")
-#
-#   # xGrid <- seq(min(modelPredMeasurements$x), max(modelPredMeasurements$x), length.out = 100)
-#   #
-#   # modelPredGrid <- data.frame(x = xGrid, y = predict(nls_obj, newdata = list(x = xGrid)))  %>%
-#   #   mutate(type = "measurement_not_available")
-#   #
-#   # out <- full_join(modelPredMeasurements, modelPredGrid, by = c("x", "y", "type")) %>%
-#   #   arrange(x)
-#'
-#   return(modelPredictions)
-# }

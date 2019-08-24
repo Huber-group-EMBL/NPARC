@@ -4,8 +4,8 @@ combineRSS <- function(idNull, rssNull, nCoeffsNull, nFittedNull,
   rssAggrNull <- aggregateRSS(id = idNull, rss = rssNull, nCoeffs = nCoeffsNull, nFitted = nFittedNull)
   rssAggrAlt  <- aggregateRSS(id = idAlt, rss = rssAlt,  nCoeffs = nCoeffsAlt,  nFitted = nFittedAlt)
 
-  colnames(rssAggrNull)[-1] %<>% paste0(., "Null")
-  colnames(rssAggrAlt)[-1] %<>% paste0(., "Alt")
+  colnames(rssAggrNull)[-1] %<>% paste0(.data, "Null")
+  colnames(rssAggrAlt)[-1] %<>% paste0(.data, "Alt")
 
   rss <- full_join(rssAggrNull, rssAggrAlt, by = "id") %>%
     mutate(rssDiff = rssNull - rssAlt)
@@ -32,10 +32,11 @@ aggregateRSS <- function(id, rss, nCoeffs, nFitted){
 #' @param df_type character value indicating the method for degrees of freedom computation for the F-test. Theoretical yields the text-book solution. Empirical yields estimates derived from the distribution moments of the RSS.
 #'
 #' @export
+#' @importFrom stats pf p.adjust
 NPARCtest <- function(modelMetrics, df_type = c("empirical", "theoretical")){
 
-  metricsNull <- filter(modelMetrics, modelType == "null")
-  metricsAlt <- filter(modelMetrics, modelType == "alternative")
+  metricsNull <- filter(modelMetrics, .data$modelType == "null")
+  metricsAlt <- filter(modelMetrics, .data$modelType == "alternative")
 
   metrics <- combineRSS(idNull = metricsNull$id,
                         rssNull = metricsNull$rss,
@@ -81,12 +82,8 @@ NPARCtest <- function(modelMetrics, df_type = c("empirical", "theoretical")){
   return(out)
 }
 
-#' Estimate degrees of freedom
-#'
-#' Estimate degrees of freedom from distribution moments of the RSS
-#'
-#' @importFrom MASS fitdistr
 estimate_df <- function(rss1, rssDiff){!is.na(rssDiff)
+  # Estimate degrees of freedom from distribution moments of the RSS
 
   rm_idx <- is.na(rssDiff) | (rssDiff < 0)
   rss1 <- rss1[!rm_idx]
@@ -97,8 +94,8 @@ estimate_df <- function(rss1, rssDiff){!is.na(rssDiff)
   s0_sq = 1/2 * V/M
   rssDiff = rssDiff/s0_sq
   rss1 = rss1/s0_sq
-  d1 = MASS::fitdistr(x = rssDiff, densfun = "chi-squared", start = list(df = 1))[["estimate"]]
-  d2 = MASS::fitdistr(x = rss1, densfun = "chi-squared", start = list(df = 1))[["estimate"]]
+  d1 = MASS::fitdistr(x = rssDiff, densfun = "chi-squared", start = list(df = 1), method = "Brent", lower = 0, upper = length(rssDiff))[["estimate"]]
+  d2 = MASS::fitdistr(x = rss1, densfun = "chi-squared", start = list(df = 1),  method = "Brent", lower = 0, upper = length(rssDiff))[["estimate"]]
 
   out <- list(d1 = d1, d2 = d2, s0_sq = s0_sq)
   return(out)

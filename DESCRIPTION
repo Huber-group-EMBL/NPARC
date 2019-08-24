@@ -17,10 +17,12 @@ Imports:
     BiocParallel,
     broom,
     MASS,
-    rlang
+    rlang,
+    magrittr
 Suggests: 
     testthat,
     devtools,
     knitr,
-    magrittr,
-    rprojroot
+    rprojroot,
+    rmarkdown
+VignetteBuilder: knitr

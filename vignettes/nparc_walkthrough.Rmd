@@ -3,12 +3,18 @@ title: "Analysing thermal proteome profiling data with the NPARC pacakge"
 author: "Dorothee Childs, Nils Kurzawa"
 date: "`r format(Sys.time(), '%d %B %Y,   %X')`"
 bibliography: bibliography.bib
-output: 
-  BiocStyle::html_document
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{nparc_walkthrough}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, cache = FALSE)
+knitr::opts_chunk$set(echo = TRUE, 
+                      cache = FALSE,
+                      collapse = TRUE,
+                      comment = "#>")
 ```
 
 
@@ -296,7 +302,7 @@ In order to compute $F$-statistics per protein and dataset according to Equation
 First, we compute the test statistics and p-values with theoretical degrees of freedom. These would be true for the case of iid residuals:
 ```{r testDOFiid}
 modelMetrics <- fits$metrics 
-fStats <- NNPARCtest(modelMetrics, df_type = "theoretical")
+fStats <- NPARCtest(modelMetrics, df_type = "theoretical")
 ```
 
 Let us take a look at the computed degrees of freedom:
@@ -344,7 +350,7 @@ It then scales the numerator and denominator of the $F$-statistic by these scali
 
 ```{r testDOFemp}
 modelMetrics <- fits$metrics 
-fStats <- NNPARCtest(modelMetrics, df_type = "empirical")
+fStats <- NPARCtest(modelMetrics, df_type = "empirical")
 ```
 
 

@@ -8,17 +8,25 @@
 #' @param control list of parameters used to control specific parts of the analyse
 #' @param BPPARAM BiocParallel parameter object to invoke curve fitting in parallel. Default: BiocParallel::SerialParam()
 #' @param return_models boolean value. If true, the fitted models are returned together with the test results
+#' @param groupsNull one or more vectors with grouping variables for the null models. See details.
+#' @param groupsAlt one or more vectors with grouping variables for the alternative models. See details.
+#' @details
+#' \code{groupsNull} or \code{groupsAlt} can either be a single vector each, or data.frames of the same length as \code{x} and \code{y} with one column per factor
 #'
 #' @export
 #' @examples
 #' data(stauro_TPP_data_tidy)
-#' df <- head(stauro_TPP_data_tidy, 100)
-#' testResults <- NPARCfit(x = df$temperature,
+#' df <- dplyr::filter(stauro_TPP_data_tidy, grepl("MAPK|ATP|CDK|GTP|CRK", uniqueID))
+#' testResults <- runNPARC(x = df$temperature,
 #'                      y = df$relAbundance,
 #'                      id = df$uniqueID,
-#'                      groupsAlt = df$compoundConcentration)
+#'                      groupsAlt = df$compoundConcentration,
+#'                      df_type = "empirical")
+#'
+#'
 #' @export
-NPARCfit <- function(x, y, id,
+NPARCfit <- function(x, y,
+                     id,
                      control = getParams(),
                      groupsNull = NULL,
                      groupsAlt,
@@ -101,11 +109,11 @@ invokeParallelFits <- function(x, y,
 
   fits <- groups %>%
     group_by_at(c("iter", "id", group_names)) %>%
-    distinct_at(as.character(groups(.))) %>%
-    do(fittedModel = models[[.$iter]]) %>%
+    distinct_at(c("iter", "id", group_names)) %>%
+    do(fittedModel = models[[.data$iter]]) %>%
     ungroup %>%
     ## Mark proteins where model fit was not successful
-    mutate(successfulFit = (sapply(fittedModel, class) != "try-error"))
+    mutate(successfulFit = (sapply(.data$fittedModel, class) != "try-error"))
 
   message("... complete.\n")
 
@@ -174,14 +182,11 @@ fitToSubset <- function(subset, x, y, iter, seed, maxAttempts, start){
 }
 
 
-#' Wrapper to repeat the fit until model has converged
-#'
-#' @param seed Random seed to control resampling in case of unsuccessful model fits
-#' @param maxAttemps number of resampling steps in case of unsuccessful model fits
 repeatSingleFit <- function(x, y,
                             start,
                             seed = NULL,
                             maxAttempts = 100){
+  # Wrapper to repeat the fit until model has converged
 
   i <- 0
   doFit <- TRUE
@@ -207,6 +212,7 @@ repeatSingleFit <- function(x, y,
 #' @param x numeric vector of the independent variables (typically temperature)
 #' @param y numeric vector of the dependent variables (typically relative abundance measurements)
 #' @param start numeric vector of start parameters for the melting curve equation
+#'
 #' @export
 #' @details
 #' Fits the following function to the data:
@@ -224,7 +230,28 @@ fitSingleSigmoid <- function(x, y, start=c(Pl = 0, a = 550, b = 10)){
       silent = TRUE)
 }
 
-getParams <- function(){
-  list(start = c(Pl = 0, a = 550, b = 10), seed = 123, maxAttempts = 100)
+#' Control parameters for model fitting
+#'
+#' Control parameters for model fitting
+#'
+#' @param seed Random seed to control resampling in case of unsuccessful model fits
+#' @param maxAttempts Number of resampling steps in case of unsuccessful model fits
+#' @param start Numeric vector of start parameters for the melting curve equation
+#'
+#' @examples
+#' data(stauro_TPP_data_tidy)
+#' df <- dplyr::filter(stauro_TPP_data_tidy, grepl("MAPK|ATP|CDK|GTP|CRK", uniqueID))
+#' testResults <- runNPARC(x = df$temperature,
+#'                      y = df$relAbundance,
+#'                      id = df$uniqueID,
+#'                      groupsAlt = df$compoundConcentration,
+#'                      df_type = "empirical",
+#'                      control = getParams(maxAttempts = 50))
+#'
+#' @export
+#'
+getParams <- function(start = c(Pl = 0, a = 550, b = 10), seed = 123, maxAttempts = 100){
+
+  list(start = start, seed = seed, maxAttempts = maxAttempts)
 }
 
