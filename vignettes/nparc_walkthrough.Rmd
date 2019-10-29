@@ -1,25 +1,28 @@
 ---
-title: "Analysing thermal proteome profiling data with the NPARC pacakge"
-author: "Dorothee Childs, Nils Kurzawa"
+title: "Analysing thermal proteome profiling data with the NPARC package"
+author: 
+  - Dorothee Childs
+  - Nils Kurzawa
+package: NPARC
 date: "`r format(Sys.time(), '%d %B %Y,   %X')`"
 bibliography: bibliography.bib
-output: rmarkdown::html_vignette
+output: 
+  BiocStyle::html_document
 vignette: >
-  %\VignetteIndexEntry{nparc_walkthrough}
+  %\VignetteIndexEntry{Analysing thermal proteome profiling data with the NPARC package}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, 
-                      cache = FALSE,
-                      collapse = TRUE,
-                      comment = "#>")
+                      cache = TRUE,
+                      collapse = TRUE)
 ```
 
 
 # Introduction
-This vignette shows how to reproduce the analysis described by [Childs, Bach, Franken et al. (2019): Non-parametric analysis of thermal proteome profiles reveals novel drug-binding proteins](https://www.biorxiv.org/content/10.1101/373845v2) using the `NPARC` package.
+This vignette shows how to reproduce the analysis described by [Childs, Bach, Franken et al. (2019): Non-parametric analysis of thermal proteome profiles reveals novel drug-binding proteins](https://doi.org/10.1101/373845) using the `NPARC` package.
 
 # Preparation
 
@@ -36,7 +39,7 @@ library(NPARC)
 
 # Data import
 
-First, we load data from a staurosporine TPP experiment [@Savitski2014]. The necessary ETL (extract, transform, load) steps have already been conducted to download the data from the supplements of the respective publication and convert them into tidy format (separate vignette to follow). 
+First, we load data from a staurosporine TPP experiment [@Savitski2014]. The necessary ETL (extract, transform, load) steps have already been conducted, including download from the supplements of the respective publication and conversion into tidy format. 
 
 ```{r load_data}
 data("stauro_TPP_data_tidy")
@@ -58,10 +61,10 @@ df %>%
 
 ```
 
-We can see that the data contains the following columns:
+The displayed data contains the following columns:
 
 - `dataset`: The dataset containing the measurements of several TMT-10 experiments. In each experiment, cells were treated with a vehicle or with the compound in one or two concentrations, and measured at ten different temperatures.
-- `uniqueID`: The unique identifier for each protein. In the given dataset, it contains the gene symbol concatenated by IPI id: `r head(df$uniqueID)` .
+- `uniqueID`: The unique identifier for each protein. In the given dataset, it contains the gene symbol concatenated by IPI id. Example: `r head(unique(df$uniqueID))` .
 - `relAbundance`: The relative signal intensity of the protein in each experiment, scaled to the intensity at the lowest temperature.
 - `temperature`: The temperatures corresponding to each of the ten measurements in a TMT experiment.
 - `compoundConcentration` The concentration of the administered compound in $\mu M$.
@@ -70,7 +73,7 @@ We can see that the data contains the following columns:
 
 # Data preprocessing and exploration
 
-The imported data contains contains **`r nrow(df)`** rows with entries for **`r length(unique(df$uniqueID))`** proteins.
+The imported data contains **`r nrow(df)`** rows with entries for **`r length(unique(df$uniqueID))`** proteins.
 
 First, we remove all abundances that were not found with at least one unique peptide, or for which a missing value was recorded.
 ```{r filter_qupm_or_NAs, results='asis'}
@@ -113,7 +116,7 @@ We first illustrate the principles of nonparametric analysis of response curves 
 
 ## Select data
 
-We first select all data entries belonging to the desired protein and dataset:
+We first select all entries belonging to the desired protein and dataset:
 ```{r select_stk4}
 stk4 <- filter(df, uniqueID == "STK4_IPI00011488")
 ```
@@ -131,10 +134,12 @@ stk4_plot_orig <- ggplot(stk4, aes(x = temperature, y = relAbundance)) +
   geom_point(aes(shape = factor(replicate), color = factor(compoundConcentration)), size = 2) +
   theme_bw() +
   ggtitle("STK4") +
-  scale_color_manual("molar staurosporine concentration", 
-                     values = c("#808080", "#da7f2d"))
+  scale_color_manual("staurosporine (mu M)", values = c("#808080", "#da7f2d")) +
+  scale_shape_manual("replicate", values = c(19, 17))
+
 print(stk4_plot_orig)
 ```
+
 We will show how to add the fitted curves to this plot in the following steps.
 
 ## Define function for model fitting
@@ -244,12 +249,18 @@ This section describes the different steps of the NPARC workflow for model fitti
 ## Start fitting
 In order to analyze all datasets as described in the paper, we fit null and alternative models to all proteins using the package function `NPARCfit`:
 
-```{r fit_all_proteins, cache=TRUE}
+```{r}
+BPPARAM <- BiocParallel::SerialParam(progressbar = FALSE)
+```
+
+
+```{r fit_all_proteins}
 fits <- NPARCfit(x = df$temperature, 
                  y = df$relAbundance, 
                  id = df$uniqueID, 
                  groupsNull = NULL, 
-                 groupsAlt = df$compoundConcentration,
+                 groupsAlt = df$compoundConcentration, 
+                 BPPARAM = BPPARAM,
                  return_models = FALSE)
 
 str(fits, 1)
@@ -269,7 +280,7 @@ fits$predictions %>%
 
 ## Check example
 
-The results of the STK4 example from earlier can be found in this object as follows.
+The results of the STK4 example from earlier can be selected from this object as follows.
 
 First, we check the RSS values of the null and alterantive models:
 ```{r show_stk4_results}
