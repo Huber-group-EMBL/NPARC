@@ -85,7 +85,7 @@ NPARCtest <- function(modelMetrics, df_type = c("empirical", "theoretical")){
 estimate_df <- function(rss1, rssDiff){!is.na(rssDiff)
   # Estimate degrees of freedom from distribution moments of the RSS
 
-  rm_idx <- is.na(rssDiff) | (rssDiff < 0)
+  rm_idx <- is.na(rssDiff) | (rssDiff <= 0)
   rss1 <- rss1[!rm_idx]
   rssDiff <- rssDiff[!rm_idx]
 
