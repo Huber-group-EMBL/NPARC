@@ -1,16 +1,16 @@
 Package: NPARC
 Type: Package
 Title: Non-parametric analysis of response curves for thermal proteome profiling experiments
-Version: 0.1.0
+Version: 0.0.99
 Author: Dorothee Childs
-Maintainer: The package maintainer <dorothee.childs@embl.de>
+Maintainer: Dorothee Childs <dorothee.childs@embl.de>
 Description: Perform non-parametric analysis of response curves as described by Childs, Bach, Franken et al. (2019): Non-parametric analysis of thermal proteome profiles reveals novel drug-binding proteins.
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.1.1
 Depends:
-    R (>= 3.5.0)
+    R (>= 3.6.0)
 Imports: 
     dplyr,
     tidyr,
@@ -24,5 +24,7 @@ Suggests:
     devtools,
     knitr,
     rprojroot,
-    rmarkdown
+    rmarkdown,
+    ggplot2,
+    BiocStyle
 VignetteBuilder: knitr

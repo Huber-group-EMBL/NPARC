@@ -52,7 +52,7 @@ assessSingleModel <- function(nls_obj, xVec){
 
   tm = a = b = pl = aumc = tm_sd = rss = logL = nCoeffs = nFitted = resid_sd <- NA
   conv <- FALSE
-  if (class(nls_obj) != "try-error"){
+  if (!is(nls_obj, "try-error")){
     #meltCurve <- Reduce(paste, deparse(formula(nls_obj))) %>% gsub("y ~ ", "", .)
     pars <- coefficients(nls_obj)
     nCoeffs <- length(pars)

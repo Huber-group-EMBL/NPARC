@@ -89,8 +89,8 @@ estimate_df <- function(rss1, rssDiff){!is.na(rssDiff)
   rss1 <- rss1[!rm_idx]
   rssDiff <- rssDiff[!rm_idx]
 
-  M = median(rssDiff, na.rm = T)
-  V = mad(rssDiff, na.rm = T)^2
+  M = median(rssDiff, na.rm = TRUE)
+  V = mad(rssDiff, na.rm = TRUE)^2
   s0_sq = 1/2 * V/M
   rssDiff = rssDiff/s0_sq
   rss1 = rss1/s0_sq

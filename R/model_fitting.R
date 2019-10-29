@@ -38,7 +38,7 @@ NPARCfit <- function(x, y,
                                    id = id,
                                    groups = groupsNull,
                                    BPPARAM = BPPARAM,
-                                   seed = control$seed,
+                                   #seed = control$seed,
                                    maxAttempts = control$maxAttempts,
                                    return_models = return_models,
                                    start = control$start)
@@ -48,7 +48,7 @@ NPARCfit <- function(x, y,
                                    id = id,
                                    groups = groupsAlt,
                                    BPPARAM = BPPARAM,
-                                   seed = control$seed,
+                                   #seed = control$seed,
                                    maxAttempts = control$maxAttempts,
                                    return_models = return_models,
                                    start = control$start)
@@ -95,7 +95,7 @@ invokeParallelFits <- function(x, y,
                          y = y,
                          iter = groups$iter,
                          BPPARAM = BPPARAM,
-                         seed = seed,
+                         #seed = seed,
                          maxAttempts = maxAttempts,
                          start = start)
 
@@ -147,7 +147,7 @@ fitAllModels <- function(x,
                                                            x = x,
                                                            y = y,
                                                            iter = iter,
-                                                           seed = seed,
+                                                           #seed = seed,
                                                            maxAttempts = maxAttempts,
                                                            start = start),
                                    BPPARAM = BPPARAM)
@@ -171,7 +171,7 @@ fitToSubset <- function(subset, x, y, iter, seed, maxAttempts, start){
 
   model <- repeatSingleFit(x = x[idx],
                            y = y[idx],
-                           seed = seed,
+                           #seed = seed,
                            maxAttempts = maxAttempts,
                            start = start)
 
@@ -184,7 +184,7 @@ fitToSubset <- function(subset, x, y, iter, seed, maxAttempts, start){
 
 repeatSingleFit <- function(x, y,
                             start,
-                            seed = NULL,
+                            # seed = NULL,
                             maxAttempts = 100){
   # Wrapper to repeat the fit until model has converged
 
@@ -192,9 +192,9 @@ repeatSingleFit <- function(x, y,
   doFit <- TRUE
   doVaryPars <- FALSE
 
-  if (!is.null(seed)){
-    set.seed(seed)
-  }
+  # if (!is.null(seed)){
+  #   set.seed(seed)
+  # }
 
   while (doFit){
     startTmp <- start * (1 + doVaryPars*runif(1, -0.5, 0.5))
@@ -250,8 +250,12 @@ fitSingleSigmoid <- function(x, y, start=c(Pl = 0, a = 550, b = 10)){
 #'
 #' @export
 #'
-getParams <- function(start = c(Pl = 0, a = 550, b = 10), seed = 123, maxAttempts = 100){
+getParams <- function(start = c(Pl = 0, a = 550, b = 10),
+                      # seed = 123,
+                      maxAttempts = 100){
 
-  list(start = start, seed = seed, maxAttempts = maxAttempts)
+  list(start = start,
+       # seed = seed,
+       maxAttempts = maxAttempts)
 }
 

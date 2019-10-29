@@ -4,15 +4,14 @@
 \alias{getParams}
 \title{Control parameters for model fitting}
 \usage{
-getParams(start = c(Pl = 0, a = 550, b = 10), seed = 123,
-  maxAttempts = 100)
+getParams(start = c(Pl = 0, a = 550, b = 10), maxAttempts = 100)
 }
 \arguments{
 \item{start}{Numeric vector of start parameters for the melting curve equation}
 
-\item{seed}{Random seed to control resampling in case of unsuccessful model fits}
-
 \item{maxAttempts}{Number of resampling steps in case of unsuccessful model fits}
+
+\item{seed}{Random seed to control resampling in case of unsuccessful model fits}
 }
 \description{
 Control parameters for model fitting
