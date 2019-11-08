@@ -7,10 +7,12 @@
 #' @param id character vector with the protein ID to which each each data point belongs.
 #' @param control list of parameters used to control specific parts of the analyse
 #' @param BPPARAM BiocParallel parameter object to invoke curve fitting in parallel. Default: BiocParallel::SerialParam()
-#' @param df_type character value indicating the method for degrees of freedom computation for the F-test. Theoretical yields the text-book solution. Empirical yields estimates derived from the distribution moments of the RSS.
-#'
+#' @param df_type character value indicating the method for degrees of freedom computation for the F-test. 
+#'  Theoretical yields the text-book solution. Empirical yields estimates derived from the distribution moments of the RSS.
 #' @param groupsNull one or more vectors with grouping variables for the null models. See details.
 #' @param groupsAlt one or more vectors with grouping variables for the alternative models. See details.
+#' @return data frame with fitted model parameters and additional columns listing e.g. residuals sum of squares of
+#'  null and alterantive model
 #' @details
 #' \code{groupsNull} or \code{groupsAlt} can either be a single vector each, or data.frames of the same length as \code{x} and \code{y} with one column per factor
 #'
@@ -18,7 +20,7 @@
 #'
 #' @examples
 #' data(stauro_TPP_data_tidy)
-#' df <- dplyr::filter(stauro_TPP_data_tidy, grepl("MAPK|ATP|CDK|GTP|CRK", uniqueID))
+#' df <- dplyr::filter(stauro_TPP_data_tidy, grepl("CDK|GTP|CRK", uniqueID))
 #' testResults <- runNPARC(x = df$temperature,
 #'                      y = df$relAbundance,
 #'                      id = df$uniqueID,

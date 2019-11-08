@@ -25,6 +25,9 @@ NPARCfit(x, y, id, control = getParams(), groupsNull = NULL, groupsAlt,
 
 \item{return_models}{boolean value. If true, the fitted models are returned together with the test results}
 }
+\value{
+data frame with fitted model parameters and additional columns listing e.g. residuals sum of squares
+}
 \description{
 Fit melting curve and return model metrics as well as predictions for the null and alternative models.
 }
@@ -33,12 +36,11 @@ Fit melting curve and return model metrics as well as predictions for the null a
 }
 \examples{
 data(stauro_TPP_data_tidy)
-df <- dplyr::filter(stauro_TPP_data_tidy, grepl("MAPK|ATP|CDK|GTP|CRK", uniqueID))
-testResults <- runNPARC(x = df$temperature,
+df <- dplyr::filter(stauro_TPP_data_tidy, grepl("CDK|GTP|CRK", uniqueID))
+testResults <- NPARCfit(x = df$temperature,
                      y = df$relAbundance,
                      id = df$uniqueID,
-                     groupsAlt = df$compoundConcentration,
-                     df_type = "empirical")
+                     groupsAlt = df$compoundConcentration)
 
 
 }

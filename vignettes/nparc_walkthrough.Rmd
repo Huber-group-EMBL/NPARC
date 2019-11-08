@@ -329,8 +329,8 @@ We plot the $F$-statistics against the theoretical $F$-distribution to check how
 
 ```{r plotFiid}
 ggplot(filter(fStats, !is.na(pAdj))) +
-  geom_density(aes(x = F), fill = "steelblue", alpha = 0.5) +
-  geom_line(aes(x = F, y = df(F, df1 = df1, df2 = df2)), color = "darkred", size = 1.5) +
+  geom_density(aes(x = fStat), fill = "steelblue", alpha = 0.5) +
+  geom_line(aes(x = fStat, y = df(fStat, df1 = df1, df2 = df2)), color = "darkred", size = 1.5) +
   theme_bw() +
   # Zoom in to small values to increase resolution for the proteins under H0:
   xlim(c(0, 10))
@@ -370,8 +370,8 @@ We plot the $F$-statistics against the theoretical $F$-distribution to check how
 
 ```{r plotFnew}
 ggplot(filter(fStats, !is.na(pAdj))) +
-  geom_density(aes(x = F), fill = "steelblue", alpha = 0.5) +
-  geom_line(aes(x = F, y = df(F, df1 = df1, df2 = df2)), color = "darkred", size = 1.5) +
+  geom_density(aes(x = fStat), fill = "steelblue", alpha = 0.5) +
+  geom_line(aes(x = fStat, y = df(fStat, df1 = df1, df2 = df2)), color = "darkred", size = 1.5) +
   theme_bw() +
   # Zoom in to small values to increase resolution for the proteins under H0:
   xlim(c(0, 10))
@@ -395,8 +395,8 @@ Finally, we can select proteins that are significantly shifted by putting a thre
 ```{r selectHits}
 topHits <- fStats %>% 
   filter(pAdj <= 0.01) %>%
-  dplyr::select(id, F, pVal, pAdj) %>%
-  arrange(-F)
+  dplyr::select(id, fStat, pVal, pAdj) %>%
+  arrange(-fStat)
 ```
 
 The table `topHits` contains **`r nrow(topHits)`** proteins with Benjamini-Hochberg corrected p-values $\leq 0.01$.

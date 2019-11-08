@@ -11,6 +11,22 @@ NPARCtest(modelMetrics, df_type = c("empirical", "theoretical"))
 
 \item{df_type}{character value indicating the method for degrees of freedom computation for the F-test. Theoretical yields the text-book solution. Empirical yields estimates derived from the distribution moments of the RSS.}
 }
+\value{
+data frame with fitted model parameters and additional columns listing e.g. residuals sum of squares of
+ null and alterantive model and raw and adjusted p values retrieved from testing
+}
 \description{
 Perform F-test
+}
+\examples{
+data(stauro_TPP_data_tidy)
+df <- dplyr::filter(stauro_TPP_data_tidy, grepl("CDK|GTP|CRK", uniqueID))
+fits <- NPARCfit(x = df$temperature, 
+                 y = df$relAbundance, 
+                 id = df$uniqueID, 
+                 groupsNull = NULL, 
+                 groupsAlt = df$compoundConcentration, 
+                 return_models = FALSE)
+modelMetrics <- fits$metrics
+testRes <-  NPARCtest(modelMetrics, df_type = "theoretical")                     
 }

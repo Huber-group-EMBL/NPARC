@@ -10,18 +10,18 @@
 #' @param return_models boolean value. If true, the fitted models are returned together with the test results
 #' @param groupsNull one or more vectors with grouping variables for the null models. See details.
 #' @param groupsAlt one or more vectors with grouping variables for the alternative models. See details.
+#' @return data frame with fitted model parameters and additional columns listing e.g. residuals sum of squares 
 #' @details
 #' \code{groupsNull} or \code{groupsAlt} can either be a single vector each, or data.frames of the same length as \code{x} and \code{y} with one column per factor
 #'
 #' @export
 #' @examples
 #' data(stauro_TPP_data_tidy)
-#' df <- dplyr::filter(stauro_TPP_data_tidy, grepl("MAPK|ATP|CDK|GTP|CRK", uniqueID))
-#' testResults <- runNPARC(x = df$temperature,
+#' df <- dplyr::filter(stauro_TPP_data_tidy, grepl("CDK|GTP|CRK", uniqueID))
+#' testResults <- NPARCfit(x = df$temperature,
 #'                      y = df$relAbundance,
 #'                      id = df$uniqueID,
-#'                      groupsAlt = df$compoundConcentration,
-#'                      df_type = "empirical")
+#'                      groupsAlt = df$compoundConcentration)
 #'
 #'
 #' @export
@@ -212,12 +212,15 @@ repeatSingleFit <- function(x, y,
 #' @param x numeric vector of the independent variables (typically temperature)
 #' @param y numeric vector of the dependent variables (typically relative abundance measurements)
 #' @param start numeric vector of start parameters for the melting curve equation
-#'
+#' @return model summary of type "nls"
 #' @export
 #' @details
 #' Fits the following function to the data:
 #' \eqn{y = (1 - Pl)  / (1+exp((b - a/x))) + Pl}
-#'
+#' @examples
+#' data(stauro_TPP_data_tidy)
+#' stk4 <- dplyr::filter(stauro_TPP_data_tidy, grepl("STK4", uniqueID))
+#' fitSingleSigmoid(stk4$temperature, stk4$relAbundance)
 fitSingleSigmoid <- function(x, y, start=c(Pl = 0, a = 550, b = 10)){
   try(nls(formula = y ~ (1 - Pl)  / (1+exp((b - a/x))) + Pl,
           start = start,
@@ -234,10 +237,11 @@ fitSingleSigmoid <- function(x, y, start=c(Pl = 0, a = 550, b = 10)){
 #'
 #' Control parameters for model fitting
 #'
-#' @param seed Random seed to control resampling in case of unsuccessful model fits
 #' @param maxAttempts Number of resampling steps in case of unsuccessful model fits
 #' @param start Numeric vector of start parameters for the melting curve equation
-#'
+#' @return list of two elements: 1) "start" listing the starting parameters for
+#'  melting curve fitting, 2) "maxAttempts" listing the maximal number of attempts
+#'  the fit should be allowed
 #' @examples
 #' data(stauro_TPP_data_tidy)
 #' df <- dplyr::filter(stauro_TPP_data_tidy, grepl("MAPK|ATP|CDK|GTP|CRK", uniqueID))
@@ -251,11 +255,9 @@ fitSingleSigmoid <- function(x, y, start=c(Pl = 0, a = 550, b = 10)){
 #' @export
 #'
 getParams <- function(start = c(Pl = 0, a = 550, b = 10),
-                      # seed = 123,
                       maxAttempts = 100){
 
   list(start = start,
-       # seed = seed,
        maxAttempts = maxAttempts)
 }
 

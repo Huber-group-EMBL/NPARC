@@ -10,8 +10,11 @@ getParams(start = c(Pl = 0, a = 550, b = 10), maxAttempts = 100)
 \item{start}{Numeric vector of start parameters for the melting curve equation}
 
 \item{maxAttempts}{Number of resampling steps in case of unsuccessful model fits}
-
-\item{seed}{Random seed to control resampling in case of unsuccessful model fits}
+}
+\value{
+list of two elements: 1) "start" listing the starting parameters for
+ melting curve fitting, 2) "maxAttempts" listing the maximal number of attempts
+ the fit should be allowed
 }
 \description{
 Control parameters for model fitting

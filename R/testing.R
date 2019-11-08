@@ -30,9 +30,21 @@ aggregateRSS <- function(id, rss, nCoeffs, nFitted){
 #'
 #' @param modelMetrics data.frame with results of the model fit in long format.
 #' @param df_type character value indicating the method for degrees of freedom computation for the F-test. Theoretical yields the text-book solution. Empirical yields estimates derived from the distribution moments of the RSS.
-#'
+#' @return data frame with fitted model parameters and additional columns listing e.g. residuals sum of squares of
+#'  null and alterantive model and raw and adjusted p values retrieved from testing
 #' @export
 #' @importFrom stats pf p.adjust
+#' @examples
+#' data(stauro_TPP_data_tidy)
+#' df <- dplyr::filter(stauro_TPP_data_tidy, grepl("CDK|GTP|CRK", uniqueID))
+#' fits <- NPARCfit(x = df$temperature, 
+#'                  y = df$relAbundance, 
+#'                  id = df$uniqueID, 
+#'                  groupsNull = NULL, 
+#'                  groupsAlt = df$compoundConcentration, 
+#'                  return_models = FALSE)
+#' modelMetrics <- fits$metrics
+#' testRes <-  NPARCtest(modelMetrics, df_type = "theoretical")                     
 NPARCtest <- function(modelMetrics, df_type = c("empirical", "theoretical")){
 
   metricsNull <- filter(modelMetrics, .data$modelType == "null")
@@ -76,7 +88,7 @@ NPARCtest <- function(modelMetrics, df_type = c("empirical", "theoretical")){
   pVal = 1 - pf(f, df1 = d1, df2 = d2)
   pAdj = p.adjust(pVal, "BH")
 
-  out <- tibble(id, rssDiff, F = f, pVal, pAdj, df1 = d1, df2 = d2, rssNull = rss0, rssAlt = rss1,
+  out <- tibble(id, rssDiff, fStat = f, pVal, pAdj, df1 = d1, df2 = d2, rssNull = rss0, rssAlt = rss1,
                 nFittedNull = n0, nFittedAlt = n1, nCoeffsNull = pars0, nCoeffsAlt = pars1)
 
   return(out)

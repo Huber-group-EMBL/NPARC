@@ -13,10 +13,18 @@ fitSingleSigmoid(x, y, start = c(Pl = 0, a = 550, b = 10))
 
 \item{start}{numeric vector of start parameters for the melting curve equation}
 }
+\value{
+model summary of type "nls"
+}
 \description{
 Fit sigmoid model
 }
 \details{
 Fits the following function to the data:
 \eqn{y = (1 - Pl)  / (1+exp((b - a/x))) + Pl}
+}
+\examples{
+data(stauro_TPP_data_tidy)
+stk4 <- dplyr::filter(stauro_TPP_data_tidy, grepl("STK4", uniqueID))
+fitSingleSigmoid(stk4$temperature, stk4$relAbundance)
 }
