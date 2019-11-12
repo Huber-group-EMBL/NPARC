@@ -1,6 +1,6 @@
 # NPARC
 Nonparametric Analysis of Response Curves from Thermal Proteome Profiling Experiments.    
-R package implementing the method described by [Childs, Bach, Franken et al. (2019) Mol. Cell. Proteomics](https://doi.org/10.1074/mcp.TIR119.001481).
+R package implementation of the method described by [Childs, Bach, Franken et al. (2019) Mol. Cell. Proteomics](https://doi.org/10.1074/mcp.TIR119.001481).
 
 ## Installation
 
