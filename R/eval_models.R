@@ -44,6 +44,7 @@ assessModelMetrics <- function(fits, x, groups){
   return(metrics)
 }
 
+#' @importFrom methods is
 assessSingleModel <- function(nls_obj, xVec){
 
   if (any(is.na(xVec))){

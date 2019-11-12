@@ -113,7 +113,9 @@ invokeParallelFits <- function(x, y,
     do(fittedModel = models[[.data$iter]]) %>%
     ungroup %>%
     ## Mark proteins where model fit was not successful
-    mutate(successfulFit = (sapply(.data$fittedModel, class) != "try-error"))
+    mutate(successfulFit = 
+               (vapply(.data$fittedModel, class, FUN.VALUE = "nls") != 
+                    "try-error"))
 
   message("... complete.\n")
 
@@ -154,7 +156,8 @@ fitAllModels <- function(x,
   gc()
 
   # ---- Return model fits ----
-  model_names <- sapply(models, function(m) attributes(m)$iter)
+  model_names <- vapply(models, function(m) attributes(m)$iter, 
+                        FUN.VALUE = "geneName_ipiId")
 
   names(models) <- model_names
 

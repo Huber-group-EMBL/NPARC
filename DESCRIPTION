@@ -21,7 +21,8 @@ Imports:
     MASS,
     rlang,
     magrittr,
-    stats
+    stats,
+    methods
 Suggests: 
     testthat,
     devtools,
