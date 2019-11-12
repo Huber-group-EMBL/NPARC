@@ -7,7 +7,7 @@
 #' @param id character vector with the protein ID to which each each data point belongs.
 #' @param control list of parameters used to control specific parts of the analyse
 #' @param BPPARAM BiocParallel parameter object to invoke curve fitting in parallel. Default: BiocParallel::SerialParam()
-#' @param return_models boolean value. If true, the fitted models are returned together with the test results
+#' @param returnModels boolean value. If true, the fitted models are returned together with the test results
 #' @param groupsNull one or more vectors with grouping variables for the null models. See details.
 #' @param groupsAlt one or more vectors with grouping variables for the alternative models. See details.
 #' @return data frame with fitted model parameters and additional columns listing e.g. residuals sum of squares 
@@ -31,16 +31,15 @@ NPARCfit <- function(x, y,
                      groupsNull = NULL,
                      groupsAlt,
                      BPPARAM = BiocParallel::SerialParam(progressbar = TRUE),
-                     return_models = FALSE){
+                     returnModels = FALSE){
 
   fitResNull <- invokeParallelFits(x = x,
                                    y = y,
                                    id = id,
                                    groups = groupsNull,
                                    BPPARAM = BPPARAM,
-                                   #seed = control$seed,
                                    maxAttempts = control$maxAttempts,
-                                   return_models = return_models,
+                                   returnModels = returnModels,
                                    start = control$start)
 
   fitResAlt <-  invokeParallelFits(x = x,
@@ -48,9 +47,8 @@ NPARCfit <- function(x, y,
                                    id = id,
                                    groups = groupsAlt,
                                    BPPARAM = BPPARAM,
-                                   #seed = control$seed,
                                    maxAttempts = control$maxAttempts,
-                                   return_models = return_models,
+                                   returnModels = returnModels,
                                    start = control$start)
 
   predictions <- bind_rows(null = fitResNull$modelPredictions,
@@ -73,7 +71,7 @@ invokeParallelFits <- function(x, y,
                                BPPARAM,
                                seed,
                                maxAttempts,
-                               return_models,
+                               returnModels,
                                start){
 
   if (is.null(groups)){
@@ -95,7 +93,6 @@ invokeParallelFits <- function(x, y,
                          y = y,
                          iter = groups$iter,
                          BPPARAM = BPPARAM,
-                         #seed = seed,
                          maxAttempts = maxAttempts,
                          start = start)
 
@@ -126,7 +123,7 @@ invokeParallelFits <- function(x, y,
                            x = x,
                            groups = group_names)
 
-  if (return_models) {
+  if (returnModels) {
     fitResults$fittedModels <- fits
   } else {
     fitResults$fittedModels <- NULL
@@ -149,7 +146,6 @@ fitAllModels <- function(x,
                                                            x = x,
                                                            y = y,
                                                            iter = iter,
-                                                           #seed = seed,
                                                            maxAttempts = maxAttempts,
                                                            start = start),
                                    BPPARAM = BPPARAM)
@@ -174,7 +170,6 @@ fitToSubset <- function(subset, x, y, iter, seed, maxAttempts, start){
 
   model <- repeatSingleFit(x = x[idx],
                            y = y[idx],
-                           #seed = seed,
                            maxAttempts = maxAttempts,
                            start = start)
 
@@ -187,17 +182,12 @@ fitToSubset <- function(subset, x, y, iter, seed, maxAttempts, start){
 
 repeatSingleFit <- function(x, y,
                             start,
-                            # seed = NULL,
                             maxAttempts = 100){
   # Wrapper to repeat the fit until model has converged
 
   i <- 0
   doFit <- TRUE
   doVaryPars <- FALSE
-
-  # if (!is.null(seed)){
-  #   set.seed(seed)
-  # }
 
   while (doFit){
     startTmp <- start * (1 + doVaryPars*runif(1, -0.5, 0.5))
@@ -238,8 +228,6 @@ fitSingleSigmoid <- function(x, y, start=c(Pl = 0, a = 550, b = 10)){
 
 #' Control parameters for model fitting
 #'
-#' Control parameters for model fitting
-#'
 #' @param maxAttempts Number of resampling steps in case of unsuccessful model fits
 #' @param start Numeric vector of start parameters for the melting curve equation
 #' @return list of two elements: 1) "start" listing the starting parameters for
@@ -252,7 +240,7 @@ fitSingleSigmoid <- function(x, y, start=c(Pl = 0, a = 550, b = 10)){
 #'                      y = df$relAbundance,
 #'                      id = df$uniqueID,
 #'                      groupsAlt = df$compoundConcentration,
-#'                      df_type = "empirical",
+#'                      dfType = "empirical",
 #'                      control = getParams(maxAttempts = 50))
 #'
 #' @export

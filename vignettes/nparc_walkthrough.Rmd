@@ -261,7 +261,7 @@ fits <- NPARCfit(x = df$temperature,
                  groupsNull = NULL, 
                  groupsAlt = df$compoundConcentration, 
                  BPPARAM = BPPARAM,
-                 return_models = FALSE)
+                 returnModels = FALSE)
 
 str(fits, 1)
 ```
@@ -313,7 +313,7 @@ In order to compute $F$-statistics per protein and dataset according to Equation
 First, we compute the test statistics and p-values with theoretical degrees of freedom. These would be true for the case of iid residuals:
 ```{r testDOFiid}
 modelMetrics <- fits$metrics 
-fStats <- NPARCtest(modelMetrics, df_type = "theoretical")
+fStats <- NPARCtest(modelMetrics, dfType = "theoretical")
 ```
 
 Let us take a look at the computed degrees of freedom:
@@ -361,7 +361,7 @@ It then scales the numerator and denominator of the $F$-statistic by these scali
 
 ```{r testDOFemp}
 modelMetrics <- fits$metrics 
-fStats <- NPARCtest(modelMetrics, df_type = "empirical")
+fStats <- NPARCtest(modelMetrics, dfType = "empirical")
 ```
 
 

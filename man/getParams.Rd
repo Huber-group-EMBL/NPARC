@@ -26,7 +26,7 @@ testResults <- runNPARC(x = df$temperature,
                      y = df$relAbundance,
                      id = df$uniqueID,
                      groupsAlt = df$compoundConcentration,
-                     df_type = "empirical",
+                     dfType = "empirical",
                      control = getParams(maxAttempts = 50))
 
 }

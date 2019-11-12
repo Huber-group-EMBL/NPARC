@@ -6,7 +6,7 @@
 \usage{
 runNPARC(x, y, id, groupsNull = NULL, groupsAlt,
   BPPARAM = BiocParallel::SerialParam(progressbar = TRUE),
-  df_type = c("theoretical", "empirical"), control = getParams())
+  dfType = c("theoretical", "empirical"), control = getParams())
 }
 \arguments{
 \item{x}{numeric vector of the independent variables (typically temperature)}
@@ -21,7 +21,7 @@ runNPARC(x, y, id, groupsNull = NULL, groupsAlt,
 
 \item{BPPARAM}{BiocParallel parameter object to invoke curve fitting in parallel. Default: BiocParallel::SerialParam()}
 
-\item{df_type}{character value indicating the method for degrees of freedom computation for the F-test. 
+\item{dfType}{character value indicating the method for degrees of freedom computation for the F-test. 
 Theoretical yields the text-book solution. Empirical yields estimates derived from the distribution moments of the RSS.}
 
 \item{control}{list of parameters used to control specific parts of the analyse}
@@ -43,5 +43,5 @@ testResults <- runNPARC(x = df$temperature,
                      y = df$relAbundance,
                      id = df$uniqueID,
                      groupsAlt = df$compoundConcentration,
-                     df_type = "empirical")
+                     dfType = "empirical")
 }

@@ -7,7 +7,7 @@
 #' @param id character vector with the protein ID to which each each data point belongs.
 #' @param control list of parameters used to control specific parts of the analyse
 #' @param BPPARAM BiocParallel parameter object to invoke curve fitting in parallel. Default: BiocParallel::SerialParam()
-#' @param df_type character value indicating the method for degrees of freedom computation for the F-test. 
+#' @param dfType character value indicating the method for degrees of freedom computation for the F-test. 
 #'  Theoretical yields the text-book solution. Empirical yields estimates derived from the distribution moments of the RSS.
 #' @param groupsNull one or more vectors with grouping variables for the null models. See details.
 #' @param groupsAlt one or more vectors with grouping variables for the alternative models. See details.
@@ -25,14 +25,14 @@
 #'                      y = df$relAbundance,
 #'                      id = df$uniqueID,
 #'                      groupsAlt = df$compoundConcentration,
-#'                      df_type = "empirical")
+#'                      dfType = "empirical")
 runNPARC <- function(x,
                      y,
                      id,
                      groupsNull = NULL,
                      groupsAlt,
                      BPPARAM = BiocParallel::SerialParam(progressbar = TRUE),
-                     df_type = c("theoretical", "empirical"),
+                     dfType = c("theoretical", "empirical"),
                      control = getParams()){
 
   fits <- NPARCfit(x = x,
@@ -41,12 +41,12 @@ runNPARC <- function(x,
                    groupsNull = groupsNull,
                    groupsAlt = groupsAlt,
                    BPPARAM = BPPARAM,
-                   return_models = FALSE,
+                   returnModels = FALSE,
                    control = control)
 
     modelMetrics <- fits$metrics
 
-    testRes <-  NPARCtest(modelMetrics, df_type = df_type)
+    testRes <-  NPARCtest(modelMetrics, dfType = dfType)
 
   return(testRes)
 }

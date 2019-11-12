@@ -8,9 +8,8 @@ test_that("invokeParallelFits_allok_rss0", {
                                id = ATP_targets_stauro$uniqueID,
                                groups = ATP_targets_stauro$uniqueID,
                                BPPARAM = BiocParallel::SerialParam(),
-                               #seed = 123,
                                maxAttempts = 100,
-                               return_models = TRUE,
+                               returnModels = TRUE,
                                start = c(Pl = 0, a = 550, b = 10))
 
   rss0_new <- result$modelMetrics$rss
@@ -27,9 +26,8 @@ test_that("invokeParallelFits_allok_rss1", {
                                id = ATP_targets_stauro$uniqueID,
                                groups = ATP_targets_stauro$compoundConcentration,
                                BPPARAM = BiocParallel::SerialParam(),
-                               #seed = 123,
                                maxAttempts = 100,
-                               return_models = TRUE,
+                               returnModels = TRUE,
                                start = c(Pl = 0, a = 550, b = 10))
 
   rss1_new <- result$modelMetrics %>%
@@ -47,7 +45,6 @@ test_that("fitAllModels_allok_rss0", {
                          y = ATP_targets_stauro$relAbundance,
                          iter = ATP_targets_stauro$uniqueID,
                          BPPARAM = BiocParallel::SerialParam(),
-                         #seed = 123,
                          maxAttempts = 100,
                          start = c(Pl = 0, a = 550, b = 10))
 
@@ -66,7 +63,6 @@ test_that("fitAllModels_allok_rss1", {
                          y = ATP_targets_stauro$relAbundance,
                          iter = paste(ATP_targets_stauro$uniqueID, ATP_targets_stauro$compoundConcentration),
                          BPPARAM = BiocParallel::SerialParam(),
-                         #seed = 123,
                          maxAttempts = 100,
                          start = c(Pl = 0, a = 550, b = 10))
 

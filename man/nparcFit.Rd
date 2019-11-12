@@ -6,7 +6,7 @@
 \usage{
 NPARCfit(x, y, id, control = getParams(), groupsNull = NULL, groupsAlt,
   BPPARAM = BiocParallel::SerialParam(progressbar = TRUE),
-  return_models = FALSE)
+  returnModels = FALSE)
 }
 \arguments{
 \item{x}{numeric vector of the independent variables (typically temperature)}
@@ -23,7 +23,7 @@ NPARCfit(x, y, id, control = getParams(), groupsNull = NULL, groupsAlt,
 
 \item{BPPARAM}{BiocParallel parameter object to invoke curve fitting in parallel. Default: BiocParallel::SerialParam()}
 
-\item{return_models}{boolean value. If true, the fitted models are returned together with the test results}
+\item{returnModels}{boolean value. If true, the fitted models are returned together with the test results}
 }
 \value{
 data frame with fitted model parameters and additional columns listing e.g. residuals sum of squares

@@ -5,7 +5,7 @@ test_that("invokeNPARC_allok", {
                       y = ATP_targets_stauro$relAbundance,
                       id = ATP_targets_stauro$uniqueID,
                       groupsAlt = ATP_targets_stauro$compoundConcentration,
-                      df_type = "theoretical")
+                      dfType = "theoretical")
 
   expect_equal(results$pAdj, pAdj_ref, tolerance = 1e-6)
 

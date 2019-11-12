@@ -29,7 +29,7 @@ aggregateRSS <- function(id, rss, nCoeffs, nFitted){
 #' Perform F-test
 #'
 #' @param modelMetrics data.frame with results of the model fit in long format.
-#' @param df_type character value indicating the method for degrees of freedom computation for the F-test. Theoretical yields the text-book solution. Empirical yields estimates derived from the distribution moments of the RSS.
+#' @param dfType character value indicating the method for degrees of freedom computation for the F-test. Theoretical yields the text-book solution. Empirical yields estimates derived from the distribution moments of the RSS.
 #' @return data frame with fitted model parameters and additional columns listing e.g. residuals sum of squares of
 #'  null and alterantive model and raw and adjusted p values retrieved from testing
 #' @export
@@ -42,10 +42,10 @@ aggregateRSS <- function(id, rss, nCoeffs, nFitted){
 #'                  id = df$uniqueID, 
 #'                  groupsNull = NULL, 
 #'                  groupsAlt = df$compoundConcentration, 
-#'                  return_models = FALSE)
+#'                  returnModels = FALSE)
 #' modelMetrics <- fits$metrics
-#' testRes <-  NPARCtest(modelMetrics, df_type = "theoretical")                     
-NPARCtest <- function(modelMetrics, df_type = c("empirical", "theoretical")){
+#' testRes <-  NPARCtest(modelMetrics, dfType = "theoretical")                     
+NPARCtest <- function(modelMetrics, dfType = c("empirical", "theoretical")){
 
   metricsNull <- filter(modelMetrics, .data$modelType == "null")
   metricsAlt <- filter(modelMetrics, .data$modelType == "alternative")
@@ -68,12 +68,12 @@ NPARCtest <- function(modelMetrics, df_type = c("empirical", "theoretical")){
   n1 <- metrics$nFittedAlt
   rssDiff <- metrics$rssDiff
 
-  if (df_type == "theoretical"){
+  if (dfType == "theoretical"){
 
     d1 = pars1 - pars0
     d2 = n1 - pars1
 
-  } else if (df_type == "empirical"){
+  } else if (dfType == "empirical"){
 
     distr_pars <- estimate_df(rss1 = rss1, rssDiff = rssDiff)
     d1 <- distr_pars$d1

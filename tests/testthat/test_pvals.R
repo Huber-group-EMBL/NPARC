@@ -8,7 +8,7 @@ test_that("nparcFTest_realdata", {
                         nFitted = c(n0_ref, n1_ref),
                         nCoeffs = c(rep(3, each = length(rss0_ref)), rep(6, each = length(rss1_ref))))
 
-  testRes <- NPARCtest(metrics, df_type = "theoretical")
+  testRes <- NPARCtest(metrics, dfType = "theoretical")
 
   # Compute expected values:
   d1 = 6 - 3
@@ -36,7 +36,7 @@ test_that("nparcFTest_single", {
   p = 1 - pf(f, df1 = d1, df2 = d2)
   pAdj_exp = p.adjust(p, "BH")
 
-  pAdj <- NPARCtest(modelMetrics = metrics, df_type = "theoretical")$pAdj
+  pAdj <- NPARCtest(modelMetrics = metrics, dfType = "theoretical")$pAdj
 
   expect_equal(pAdj, pAdj_exp)
 })

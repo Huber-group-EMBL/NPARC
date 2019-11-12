@@ -4,12 +4,12 @@
 \alias{NPARCtest}
 \title{Perform F-test}
 \usage{
-NPARCtest(modelMetrics, df_type = c("empirical", "theoretical"))
+NPARCtest(modelMetrics, dfType = c("empirical", "theoretical"))
 }
 \arguments{
 \item{modelMetrics}{data.frame with results of the model fit in long format.}
 
-\item{df_type}{character value indicating the method for degrees of freedom computation for the F-test. Theoretical yields the text-book solution. Empirical yields estimates derived from the distribution moments of the RSS.}
+\item{dfType}{character value indicating the method for degrees of freedom computation for the F-test. Theoretical yields the text-book solution. Empirical yields estimates derived from the distribution moments of the RSS.}
 }
 \value{
 data frame with fitted model parameters and additional columns listing e.g. residuals sum of squares of
@@ -26,7 +26,7 @@ fits <- NPARCfit(x = df$temperature,
                  id = df$uniqueID, 
                  groupsNull = NULL, 
                  groupsAlt = df$compoundConcentration, 
-                 return_models = FALSE)
+                 returnModels = FALSE)
 modelMetrics <- fits$metrics
-testRes <-  NPARCtest(modelMetrics, df_type = "theoretical")                     
+testRes <-  NPARCtest(modelMetrics, dfType = "theoretical")                     
 }
