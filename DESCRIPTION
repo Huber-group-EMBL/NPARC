@@ -1,7 +1,7 @@
 Package: NPARC
 Type: Package
 Title: Non-parametric analysis of response curves for thermal proteome profiling experiments
-Version: 0.99.4
+Version: 0.99.5
 Author: 
     Dorothee Childs,
     Nils Kurzawa

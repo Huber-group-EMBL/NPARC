@@ -4,8 +4,28 @@ R package implementation of the method described by [Childs, Bach, Franken et al
 
 ## Installation
 
+### Installation from Bioconductor (recommended)
+
+`NPARC` is in the process of being made available through Bioconductor! Therefore, the most reliable way to install it is via BiocManager:
+
 ```{R}
-if (!requireNamespace("devtools", quietly = TRUE))
-install.packages("devtools")
-devtools::install_github("Huber-group-EMBL/NPARC")
+if (!requireNamespace("BiocManager", quietly = TRUE))
+install.packages("BiocManager")
+BiocManager::install("NPARC")
+```
+
+### Installation of the development version
+
+```{R}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+install.packages("BiocManager")
+BiocManager::install(“Huber-group-EMBL/NPARC”)
+```
+
+## Getting started
+
+The easiest way of learning how to use the `NPARC` package is to browse it's vignette:
+```{R}
+library(NPARC)
+browseVignettes("NPARC")
 ```
