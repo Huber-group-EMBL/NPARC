@@ -1,0 +1,18 @@
+citHeader("To cite NPARC in publications use:")
+
+bibentry(
+    bibtype = "Article",
+    author = c(
+        person(c("Dorothee"), "Childs"),
+        person(c("Karsten"), "Bach"),
+        person(c("Holger"), "Franken"),
+        person(c("Simon"), "Anders"),
+        person(c("Nils"), "Kurzawa"),
+        person(c("Marcus"), "Bantscheff"),
+        person(c("Mikhail", "M."), "Savitski"),
+        person(c("Wolfgang"), "Huber")
+    ),
+    title = "Nonparametric Analysis of Thermal Proteome Profiles Reveals Novel Drug-binding Proteins",
+    journal = "Molecular & Cellular Proteomics",
+    year = "10.1074/mcp.TIR119.001481"
+)
