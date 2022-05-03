@@ -5,7 +5,7 @@ Version: 1.9.0
 Author: 
     Dorothee Childs,
     Nils Kurzawa
-Maintainer: Nils Kurzawa <nils.kurzawa@embl.de>
+Maintainer: Nils Kurzawa <nilskurzawa@gmail.com>
 Description: Perform non-parametric analysis of response curves as described by Childs, Bach, Franken et al. (2019): Non-parametric analysis of thermal proteome profiles reveals novel drug-binding proteins.
 License: GPL-3
 Encoding: UTF-8
