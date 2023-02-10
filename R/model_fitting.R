@@ -82,6 +82,7 @@ invokeParallelFits <- function(x, y,
   group_names <- colnames(groups)
 
   groups <- groups %>%
+    as_tibble() %>% 
     mutate(id = id) %>%
     unite("iter", !!c("id", group_names), remove = FALSE)
 
